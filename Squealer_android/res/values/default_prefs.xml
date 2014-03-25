@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="pref_receiver_carrier">receiver_pref_carrier</string>
+    <string name="pref_receiver_modulator">receiver_pref_modulator</string>
+    <string name="pref_receiver_message">receiver_pref_message</string>
+    <string name="pref_transmitter_carrier">transmitter_pref_carrier</string>
+    <string name="pref_transmitter_modulator">transmitter_pref_modulator</string>
+    <string name="pref_transmitter_message">transmitter_pref_message</string>
+</resources>

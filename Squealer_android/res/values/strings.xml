@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Squealer</string>
+    
+    <string name="receiver_label">Receiver</string>
+    <string name="receiver_swipe_tip">Swipe left to transmit.</string>
+    <string name="receiver_config_match">Match Transmitter</string>
+    <string name="receiver_message_label">Received message:</string>
+    <string name="receiver_start_label">Start Receiving</string>
+    <string name="receiver_abort_label">Abort Receiving</string>
+    
+    <string name="transmitter_label">Transmitter</string>
+    <string name="transmitter_swipe_tip">Swipe right to receive.</string>
+    <string name="transmitter_config_match">Match Receiver</string>
+    <string name="transmitter_message_label">Message to send:</string>
+    <string name="transmitter_start_label">Start Transmission</string>
+    <string name="transmitter_abort_label">Abort Transmission</string>
+    
+    <string name="config_car_freq_label">Carrier Freq.:</string>
+    <string name="config_mod_freq_label">Modulating Freq.:</string>
+    
+    <string name="clear_label">Clear</string>
+    
+</resources>
