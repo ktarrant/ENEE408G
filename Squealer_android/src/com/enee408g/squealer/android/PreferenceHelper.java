@@ -58,7 +58,7 @@ public class PreferenceHelper {
 	}
 	public static int getReceiverModulatorFrequency() {
 		return PreferenceManager.getDefaultSharedPreferences(mContext)
-				.getInt(RECEIVER_MODULATOR, defaultCarrier);
+				.getInt(RECEIVER_MODULATOR, defaultModulator);
 	}
 	public static String getReceiverMessage() {
 		return PreferenceManager.getDefaultSharedPreferences(mContext)
@@ -70,7 +70,7 @@ public class PreferenceHelper {
 	}
 	public static int getTransmitterModulatorFrequency() {
 		return PreferenceManager.getDefaultSharedPreferences(mContext)
-				.getInt(TRANSMITTER_MODULATOR, defaultCarrier);
+				.getInt(TRANSMITTER_MODULATOR, defaultModulator);
 	}
 	public static String getTransmitterMessage() {
 		return PreferenceManager.getDefaultSharedPreferences(mContext)
