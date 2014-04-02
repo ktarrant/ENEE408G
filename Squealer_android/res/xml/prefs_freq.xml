@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"> 
+    <PreferenceCategory>   
+	    <EditTextPreference
+		    android:key="rcvr_carrier"
+		    android:defaultValue="21000"
+		    android:title="Receiver Carrier Frequency"
+		/>
+	    <EditTextPreference
+		    android:key="rcvr_modulator"
+		    android:defaultValue="22000"
+		    android:title="Receiver Modulator Frequency"
+		/>
+	    <CheckBoxPreference 
+	        android:key="rcvr_match"
+	        android:defaultValue="true"
+	        android:title="Match to Transmitter"
+	    />
+    </PreferenceCategory>
+    <PreferenceCategory>
+	    <EditTextPreference
+		    android:key="trns_carrier"
+		    android:defaultValue="21000"
+		    android:title="Transmission Carrier Frequency"
+		/>
+	    <EditTextPreference
+		    android:key="trns_modulator"
+		    android:defaultValue="22000"
+		    android:title="Transmission Modulator Frequency"
+		/>
+	    <CheckBoxPreference 
+	        android:key="trns_match"
+	        android:defaultValue="true"
+	        android:title="Match to Receiver"
+	    />
+    </PreferenceCategory>
+</PreferenceScreen>
