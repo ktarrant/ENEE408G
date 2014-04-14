@@ -28,9 +28,6 @@ public class HelloActivity extends FragmentActivity {
     // representing an object in the collection.
 	MainPagerAdapter mMainPagerAdapter;
     ViewPager mViewPager;
-    AudioTrack track;
-    int minBufferSize=2048;
-    float period=(float) (2.0f*Math.PI);
 
 
     @Override
@@ -46,7 +43,7 @@ public class HelloActivity extends FragmentActivity {
         mViewPager.setAdapter(mMainPagerAdapter);
         
         // Set up PreferenceHelper
-        //PreferenceHelper.setContext(this);
+        PreferenceHelper.setContext(this);
     }
     
     @Override
@@ -88,31 +85,5 @@ public class HelloActivity extends FragmentActivity {
 			return 2;
 		}
     }
-   private class soundTask extends AsyncTask < Float, Void, Void>{
 
-	   @Override
-       protected Void doInBackground(Void... foo) {
-           short[] buffer = new short[1024];
-           this.track = new AudioTrack(AudioManager.STREAM_MUSIC, 44100, AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, minBufferSize, AudioTrack.MODE_STREAM);
-           float increment = period * frequency / 44100; // angular increment for each sample
-           float angle = 0;
-           float samples[] = new float[1024];
-
-           this.track.play();
-
-           while (true) {
-               for (int i = 0; i < samples.length; i++) {
-                   samples[i] = (float) Math.sin(angle);   //the part that makes this a sine wave....
-                   buffer[i] = (short) (samples[i] * Short.MAX_VALUE);
-                   angle += increment;
-               }
-               this.track.write( buffer, 0, samples.length );  //write to the audio buffer.... and start all over again!
-
-           }           
-       }
-	   
-	   
-	   
-	   
-   }//end private class
 }
