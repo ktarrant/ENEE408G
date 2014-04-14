@@ -6,7 +6,7 @@
 
     <uses-sdk
         android:minSdkVersion="11"
-        android:targetSdkVersion="18" />
+        android:targetSdkVersion="19" />
 
     <application
         android:allowBackup="true"
@@ -21,6 +21,13 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        
+        <activity android:name="com.enee408g.squealer.android.SettingsActivity"
+            android:label="@string/settings_activity_label"
+            android:parentActivityName="com.enee408g.squealer.android.HelloActivity">
+            <meta-data android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.enee408g.squealer.android.HelloActivity" />
         </activity>
     </application>
 

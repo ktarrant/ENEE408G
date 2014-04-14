@@ -22,99 +22,49 @@
         android:layout_below="@+id/receiver_label"
         android:text="@string/receiver_swipe_tip"
         android:textAppearance="?android:attr/textAppearanceSmall" />
-
-    <TextView
-        android:id="@+id/receiver_config_car_freq_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/receiver_swipe_tip"
-        android:layout_marginTop="20dp"
-        android:text="@string/config_car_freq_label"/>
-
-    <EditText
-        android:id="@+id/receiver_config_car_freq"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/receiver_config_car_freq_label"
-        android:layout_alignBottom="@+id/receiver_config_car_freq_label"
-        android:layout_alignParentRight="true"
-        android:layout_toRightOf="@+id/receiver_label"
-        android:ems="10"
-        android:inputType="number" >
-
-        <requestFocus />
-    </EditText>
     
-   <TextView
-        android:id="@+id/receiver_config_mod_freq_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/receiver_config_car_freq"
-        android:layout_marginTop="20dp"
-        android:text="@string/config_mod_freq_label"/>
-
-    <EditText
-        android:id="@+id/receiver_config_mod_freq"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignBaseline="@+id/receiver_config_mod_freq_label"
-        android:layout_alignBottom="@+id/receiver_config_mod_freq_label"
-        android:layout_alignParentRight="true"
-        android:layout_toRightOf="@+id/receiver_config_mod_freq_label"
-        android:ems="10"
-        android:inputType="number" />
-    
-    <CheckBox
-        android:id="@+id/receiver_config_match"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:layout_below="@+id/receiver_config_mod_freq"
-        android:layout_marginTop="16dp"
-        android:text="@string/receiver_config_match" />
-
-    <EditText
+   <EditText
         android:id="@+id/receiver_message"
-        android:layout_width="wrap_content"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentRight="true"
+        android:layout_alignLeft="@+id/receiver_message_label"
         android:layout_below="@+id/receiver_message_label"
-        android:ems="10"
         android:inputType="textMultiLine" />
-
-    <TextView
-        android:id="@+id/receiver_message_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_below="@+id/receiver_config_match"
-        android:text="@string/receiver_message_label" />
-
+        
     <Button
         android:id="@+id/receiver_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignRight="@+id/receiver_message"
+        android:layout_alignLeft="@+id/receiver_message"
         android:layout_below="@+id/receiver_message"
-        android:text="@string/receiver_start_label" />
+        android:text="@string/receiver_start_label" >
 
-    <TextView
-        android:id="@+id/receiver_progress_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentLeft="true"
-        android:layout_alignTop="@+id/receiver_button"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        <requestFocus />
+    </Button>
     
-    <ProgressBar
+   <ProgressBar
         android:id="@+id/receiver_progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true" />
+    
+    <TextView
+        android:id="@+id/receiver_progress_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_above="@+id/receiver_progress_bar"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/receiver_message_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/receiver_swipe_tip"
+        android:layout_below="@+id/receiver_swipe_tip"
+        android:layout_marginTop="15dp"
+        android:text="@string/receiver_message_label" />
 
 </RelativeLayout>

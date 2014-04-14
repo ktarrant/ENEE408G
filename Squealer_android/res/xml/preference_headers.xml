@@ -3,7 +3,7 @@
 	xmlns:android="http://schemas.android.com/apk/res/android">
 	
     <header
-        android:fragment=".SettingsActivity$FreqPrefsFragment"
+        android:fragment="com.enee408g.squealer.android.SettingsActivity$FreqPrefsFragment"
         android:title="Frequency Preferences"
         android:summary="Customize the frequencies used to transmit your data." />
     

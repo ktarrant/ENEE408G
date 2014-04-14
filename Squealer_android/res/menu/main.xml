@@ -2,6 +2,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
     <item android:id="@+id/action_settings"
           android:icon="@android:drawable/ic_menu_preferences"
-          android:title="Settings"
-          android:showAsAction="always" />
+          android:title="@string/settings_activity_label"
+          android:showAsAction="always"/>
 </menu>

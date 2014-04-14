@@ -24,61 +24,55 @@ public final class R {
         public static final int ic_launcher=0x7f020000;
     }
     public static final class id {
-        public static final int pager=0x7f070000;
-        public static final int receiver_button=0x7f07000a;
-        public static final int receiver_config_car_freq=0x7f070004;
-        public static final int receiver_config_car_freq_label=0x7f070003;
-        public static final int receiver_config_match=0x7f070007;
-        public static final int receiver_config_mod_freq=0x7f070006;
-        public static final int receiver_config_mod_freq_label=0x7f070005;
-        public static final int receiver_label=0x7f070001;
-        public static final int receiver_message=0x7f070008;
-        public static final int receiver_message_label=0x7f070009;
-        public static final int receiver_progress_bar=0x7f07000c;
-        public static final int receiver_progress_label=0x7f07000b;
-        public static final int receiver_swipe_tip=0x7f070002;
-        public static final int transmitter_button=0x7f070016;
-        public static final int transmitter_clear=0x7f070019;
-        public static final int transmitter_config_car_freq=0x7f070010;
-        public static final int transmitter_config_car_freq_label=0x7f07000f;
-        public static final int transmitter_config_match=0x7f070014;
-        public static final int transmitter_config_mod_freq=0x7f070012;
-        public static final int transmitter_config_mod_freq_label=0x7f070011;
-        public static final int transmitter_label=0x7f07000d;
-        public static final int transmitter_message=0x7f070015;
-        public static final int transmitter_message_label=0x7f070013;
-        public static final int transmitter_progress_bar=0x7f070018;
-        public static final int transmitter_progress_label=0x7f070017;
-        public static final int transmitter_swipe_tip=0x7f07000e;
+        public static final int action_settings=0x7f09000f;
+        public static final int pager=0x7f090000;
+        public static final int receiver_button=0x7f090005;
+        public static final int receiver_label=0x7f090001;
+        public static final int receiver_message=0x7f090003;
+        public static final int receiver_message_label=0x7f090004;
+        public static final int receiver_progress_bar=0x7f090006;
+        public static final int receiver_progress_label=0x7f090007;
+        public static final int receiver_swipe_tip=0x7f090002;
+        public static final int transmitter_button=0x7f09000c;
+        public static final int transmitter_label=0x7f090008;
+        public static final int transmitter_message=0x7f09000a;
+        public static final int transmitter_message_label=0x7f09000b;
+        public static final int transmitter_progress_bar=0x7f09000d;
+        public static final int transmitter_progress_label=0x7f09000e;
+        public static final int transmitter_swipe_tip=0x7f090009;
     }
     public static final class layout {
         public static final int activity_hello=0x7f030000;
         public static final int fragment_receiver=0x7f030001;
         public static final int fragment_transmitter=0x7f030002;
     }
+    public static final class menu {
+        public static final int main=0x7f080000;
+    }
     public static final class string {
-        public static final int app_name=0x7f040006;
-        public static final int clear_label=0x7f040015;
-        public static final int config_car_freq_label=0x7f040013;
-        public static final int config_mod_freq_label=0x7f040014;
-        public static final int pref_receiver_carrier=0x7f040000;
-        public static final int pref_receiver_message=0x7f040002;
-        public static final int pref_receiver_modulator=0x7f040001;
-        public static final int pref_transmitter_carrier=0x7f040003;
-        public static final int pref_transmitter_message=0x7f040005;
-        public static final int pref_transmitter_modulator=0x7f040004;
-        public static final int receiver_abort_label=0x7f04000c;
-        public static final int receiver_config_match=0x7f040009;
-        public static final int receiver_label=0x7f040007;
-        public static final int receiver_message_label=0x7f04000a;
-        public static final int receiver_start_label=0x7f04000b;
-        public static final int receiver_swipe_tip=0x7f040008;
-        public static final int transmitter_abort_label=0x7f040012;
-        public static final int transmitter_config_match=0x7f04000f;
-        public static final int transmitter_label=0x7f04000d;
-        public static final int transmitter_message_label=0x7f040010;
-        public static final int transmitter_start_label=0x7f040011;
-        public static final int transmitter_swipe_tip=0x7f04000e;
+        public static final int app_name=0x7f060000;
+        public static final int clear_label=0x7f060015;
+        public static final int config_car_freq_label=0x7f06000d;
+        public static final int config_mod_freq_label=0x7f06000e;
+        public static final int pref_receiver_carrier=0x7f06000f;
+        public static final int pref_receiver_message=0x7f060011;
+        public static final int pref_receiver_modulator=0x7f060010;
+        public static final int pref_transmitter_carrier=0x7f060012;
+        public static final int pref_transmitter_message=0x7f060014;
+        public static final int pref_transmitter_modulator=0x7f060013;
+        public static final int receiver_abort_label=0x7f060006;
+        public static final int receiver_config_label=0x7f060003;
+        public static final int receiver_label=0x7f060001;
+        public static final int receiver_message_label=0x7f060004;
+        public static final int receiver_start_label=0x7f060005;
+        public static final int receiver_swipe_tip=0x7f060002;
+        public static final int settings_activity_label=0x7f060016;
+        public static final int transmitter_abort_label=0x7f06000c;
+        public static final int transmitter_config_label=0x7f060009;
+        public static final int transmitter_label=0x7f060007;
+        public static final int transmitter_message_label=0x7f06000a;
+        public static final int transmitter_start_label=0x7f06000b;
+        public static final int transmitter_swipe_tip=0x7f060008;
     }
     public static final class style {
         /** 
@@ -102,10 +96,14 @@ public final class R {
     
  API 14 theme customizations can go here. 
          */
-        public static final int AppBaseTheme=0x7f060000;
+        public static final int AppBaseTheme=0x7f070000;
         /**  Application theme. 
  All customizations that are NOT specific to a particular API-level can go here. 
          */
-        public static final int AppTheme=0x7f060001;
+        public static final int AppTheme=0x7f070001;
+    }
+    public static final class xml {
+        public static final int preference_headers=0x7f040000;
+        public static final int prefs_freq=0x7f040001;
     }
 }

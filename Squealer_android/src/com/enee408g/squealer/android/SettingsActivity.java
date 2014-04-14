@@ -4,12 +4,15 @@ import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Configuration;
 import android.media.Ringtone;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -31,6 +34,7 @@ public class SettingsActivity extends PreferenceActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
 		
 		// Show the Up button in the action bar.
 		getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -92,12 +96,52 @@ public class SettingsActivity extends PreferenceActivity {
 	
 	public static class FreqPrefsFragment extends PreferenceFragment {
 		
+		SharedPreferences prefs = null;
+		
+		public OnSharedPreferenceChangeListener prefListener = new OnSharedPreferenceChangeListener() {
+			@Override
+			public void onSharedPreferenceChanged(
+					SharedPreferences prefs, String key) {
+				updatePreference(prefs, key);
+			}
+		};
+		
+		public void updatePreference(SharedPreferences prefs, String key) {
+		    Preference pref = findPreference(key);
+
+		    if (pref instanceof EditTextPreference) {
+		        EditTextPreference listPref = (EditTextPreference) pref;
+		        pref.setSummary(prefs.getString(key, "None" ) + " Hz");
+		    }
+		}
+		
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-
+            
+            prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            
             // Load the preferences from an XML resource
             addPreferencesFromResource(R.xml.prefs_freq);
+    		
+    		
+        }
+        
+        @Override
+        public void onResume() {
+        	super.onResume();
+        	
+        	prefs.registerOnSharedPreferenceChangeListener(prefListener);
+        	
+        	//for (int i = 0;i < this.getPreferenceScreen().getPreferenceCount(); );
+        	//}
+        }
+        
+        @Override
+        public void onPause() {
+        	super.onPause();
+        	
+        	prefs.unregisterOnSharedPreferenceChangeListener(prefListener);
         }
 	}
 }

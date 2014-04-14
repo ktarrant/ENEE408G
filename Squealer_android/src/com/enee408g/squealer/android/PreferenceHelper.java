@@ -37,43 +37,48 @@ public class PreferenceHelper {
 		
 		// Write to both Receiver and Transmitter
 		SharedPreferences.Editor e = prefs.edit();
-		e.putInt(RECEIVER_CARRIER, 
-				prefs.getInt(RECEIVER_CARRIER, defaultCarrier));
-		e.putInt(RECEIVER_MODULATOR, 
-				prefs.getInt(RECEIVER_MODULATOR, defaultModulator));
+		e.putString(RECEIVER_CARRIER, 
+				prefs.getString(RECEIVER_CARRIER, String.valueOf(defaultCarrier)));
+		e.putString(RECEIVER_MODULATOR, 
+				prefs.getString(RECEIVER_MODULATOR, String.valueOf(defaultModulator)));
 		e.putString(RECEIVER_MESSAGE, 
 				prefs.getString(RECEIVER_MESSAGE, defaultMessage ));
-		e.putInt(TRANSMITTER_CARRIER, 
-				prefs.getInt(TRANSMITTER_CARRIER, defaultCarrier));
-		e.putInt(TRANSMITTER_MODULATOR, 
-				prefs.getInt(TRANSMITTER_MODULATOR, defaultModulator));
+		e.putString(TRANSMITTER_CARRIER, 
+				prefs.getString(TRANSMITTER_CARRIER, String.valueOf(defaultCarrier)));
+		e.putString(TRANSMITTER_MODULATOR, 
+				prefs.getString(TRANSMITTER_MODULATOR, String.valueOf(defaultModulator)));
 		e.putString(TRANSMITTER_MESSAGE, 
-				prefs.getString(TRANSMITTER_MESSAGE, defaultMessage ));
+				prefs.getString(TRANSMITTER_MESSAGE, defaultMessage));
 		e.commit();
 	}
 	
 	public static int getReceiverCarrierFrequency() {
-		return PreferenceManager.getDefaultSharedPreferences(mContext)
-				.getInt(RECEIVER_CARRIER, defaultCarrier);
+		return Integer.valueOf(PreferenceManager.getDefaultSharedPreferences(mContext)
+				.getString(RECEIVER_CARRIER, String.valueOf(defaultCarrier)));
 	}
 	public static int getReceiverModulatorFrequency() {
-		return PreferenceManager.getDefaultSharedPreferences(mContext)
-				.getInt(RECEIVER_MODULATOR, defaultModulator);
+		return Integer.valueOf(PreferenceManager.getDefaultSharedPreferences(mContext)
+				.getString(RECEIVER_MODULATOR, String.valueOf(defaultModulator)));
 	}
 	public static String getReceiverMessage() {
 		return PreferenceManager.getDefaultSharedPreferences(mContext)
 				.getString(RECEIVER_MESSAGE, defaultMessage);
 	}
 	public static int getTransmitterCarrierFrequency() {
-		return PreferenceManager.getDefaultSharedPreferences(mContext)
-				.getInt(TRANSMITTER_CARRIER, defaultCarrier);
+		return Integer.valueOf(PreferenceManager.getDefaultSharedPreferences(mContext)
+				.getString(TRANSMITTER_CARRIER, String.valueOf(defaultCarrier)));
 	}
 	public static int getTransmitterModulatorFrequency() {
-		return PreferenceManager.getDefaultSharedPreferences(mContext)
-				.getInt(TRANSMITTER_MODULATOR, defaultModulator);
+		return Integer.valueOf(PreferenceManager.getDefaultSharedPreferences(mContext)
+				.getString(TRANSMITTER_MODULATOR, String.valueOf(defaultModulator)));
 	}
 	public static String getTransmitterMessage() {
 		return PreferenceManager.getDefaultSharedPreferences(mContext)
 				.getString(TRANSMITTER_MESSAGE, defaultMessage);
+	}
+	public static void restoreDefaults() {
+		PreferenceManager.getDefaultSharedPreferences(mContext).edit()
+			.clear().commit();
+		PreferenceManager.setDefaultValues(mContext, R.xml.prefs_freq, true);
 	}
 }
