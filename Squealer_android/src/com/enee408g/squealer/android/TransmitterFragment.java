@@ -1,6 +1,9 @@
 package com.enee408g.squealer.android;
 
+import com.enee408g.squealer.android.SineGenerator.PlaybackFinishedListener;
+
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -14,11 +17,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 
 public class TransmitterFragment extends Fragment {
 	
-	  private SoundTask soundTask = null;	
+	  private SineGenerator gen = null;
       private Button goButton = null;
+      private EditText textView = null;
 	
 	  @Override
 	  public View onCreateView(LayoutInflater inflater,
@@ -27,74 +32,63 @@ public class TransmitterFragment extends Fragment {
 	              R.layout.fragment_transmitter, container, false);
 
 	      goButton = (Button) rootView.findViewById(R.id.transmitter_button);
+	      textView = (EditText) rootView.findViewById(R.id.transmitter_message);
+	      
+	      PreferenceManager.getDefaultSharedPreferences(getActivity())
+	      	.registerOnSharedPreferenceChangeListener(new OnSharedPreferenceChangeListener() {
+
+				@Override
+				public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+					gen.setFrequencies((float)PreferenceHelper.getTransmitterCarrierFrequency(),
+				    		  (float)PreferenceHelper.getTransmitterModulatorFrequency());
+				}
+	      	});
+	      
+	      gen = new SineGenerator(
+	    		  (float)PreferenceHelper.getTransmitterCarrierFrequency(),
+	    		  (float)PreferenceHelper.getTransmitterModulatorFrequency());
+	      gen.setPlaybackFinishedListener(new PlaybackFinishedListener() {
+			@Override
+			public void onPlaybackFinished(boolean cancelled) {
+				if (!cancelled) {
+					goButton.setText(getString(R.string.transmitter_start_label));
+				}
+			}
+	      });
 	      
 	      goButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if (soundTask == null) {
-					new SoundTask().execute((float)PreferenceHelper.getTransmitterCarrierFrequency());
-					goButton.setText(getString(R.string.transmitter_abort_label));
+				if (!gen.isPlaying()) {
+					startPlaying();
 				} else {
-					soundTask.cancel(true);
-					goButton.setText(getString(R.string.transmitter_start_label));
+					stopPlaying();
 				}
 			} 
 	      });
 	      
+	      
 	      return rootView;
 	  }
 	  
-	   private class SoundTask extends AsyncTask <Float, Void, Void> {
-		   
-		    AudioTrack track;
-		    int minBufferSize=2048;
-		    float period=(float) (2.0f*Math.PI);
-
-		   @Override
-		   protected void onPreExecute() {
-			   if (soundTask == null) {
-				   soundTask = this;
-			   }
-		   }
-		    
-		   @Override
-	       protected Void doInBackground(Float... frequencies) {
-			   if (soundTask == this) {
-				   int bufferSize = 10240;
-		           short[] buffer = new short[bufferSize];
-		           int sampleRate = 44100;
-		           
-		           this.track = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, 
-		        		   AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, 
-		        		   minBufferSize, AudioTrack.MODE_STREAM);
-		           
-		           float[] digiFreq = new float[frequencies.length];
-			        for (int i = 0; i < frequencies.length; i++) {
-			        		digiFreq[i] = period*frequencies[i]/(float)sampleRate;
-			        }
-		           int angle = 0;
-		           float samples[] = new float[bufferSize];
-	
-		           this.track.play();
-		           
-		           while (!isCancelled()) {
-		               for (int i = 0; i < samples.length; i++) {
-		            	   samples[i] = 0;
-		            	   for (int j = 0; j < frequencies.length;j++) {
-		            		   samples[i] += (float) Math.sin(i*digiFreq[j]);   //the part that makes this a sine wave....
-		            	   }
-		                   buffer[i] = (short) (samples[i] * Short.MAX_VALUE);
-		                   angle += 1;
-		               }
-		               this.track.write( buffer, 0, samples.length );  //write to the audio buffer.... and start all over again!
-	
-		           }
-
-			   }
-			   
-			   soundTask = null;
-			   return null;
-	       }
-
-	   }//end private class
+	  public void startPlaying() {
+		String msg = textView.getText().toString();
+		Byte[] b = new Byte[msg.length()];
+		for (int i = 0; i < msg.length(); i++) {
+			b[i] = 0;
+			switch(msg.charAt(i)) {
+			case '1': b[i] = 1; break;
+			case '2': b[i] = 2; break;
+			case '3': b[i] = 3; break;
+			default: b[i] = 0;
+			}
+		}
+		gen.play(b);
+		goButton.setText(getString(R.string.transmitter_abort_label));
+	  }
+	  
+	  public void stopPlaying() {
+		  gen.cancel();
+		  goButton.setText(getString(R.string.transmitter_start_label));
+	  }
 }
