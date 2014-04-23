@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
@@ -111,7 +112,7 @@ public class SettingsActivity extends PreferenceActivity {
 
 		    if (pref instanceof EditTextPreference) {
 		        EditTextPreference listPref = (EditTextPreference) pref;
-		        pref.setSummary(prefs.getString(key, "None" ) + " Hz");
+		        pref.setSummary(prefs.getString(key, "0" ) + " Hz");
 		    }
 		}
 		
@@ -124,7 +125,29 @@ public class SettingsActivity extends PreferenceActivity {
             // Load the preferences from an XML resource
             addPreferencesFromResource(R.xml.prefs_freq);
     		
+    		String[] keys = PreferenceHelper.getAllFrequencyKeys();
+    		for (String key : keys) {
+    			updatePreference(prefs, key);
+    		}
+    		updatePreference(prefs, "freq_fart");
     		
+    		Preference defPref = findPreference(getString(R.string.default_pref));
+    		defPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					PreferenceHelper.setFrequencyDefaults(getActivity());
+					return false;
+				}
+    		});
+    		
+    		Preference audPref = findPreference(getString(R.string.audible_pref));
+    		audPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					PreferenceHelper.setFrequencyRange(getActivity(), 2000, 500);
+					return false;
+				}
+    		});
         }
         
         @Override

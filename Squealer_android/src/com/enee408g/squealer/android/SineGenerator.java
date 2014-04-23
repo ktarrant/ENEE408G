@@ -8,19 +8,23 @@ import android.os.AsyncTask;
 public class SineGenerator {
 	
 	private SoundTask task = null;
-	private Float[] frequencies;
 	private AudioTrack track;
 	
+	private int[] frequencies;
+	private int fartFrequency;
+	private int sampleRate = 44100;
 	private int pulseSampleWidth = 2048;
+	private int fartSampleWidth = pulseSampleWidth * 4;
 	private int pulsesPerBuffer = 2;
     private int trackBufferSize = 2048;
-	private int sampleRate = 44100;
 	private float scale = 1.0f;
 	private float[] digiFreq = null;
+	private float digiFart;
 	private PlaybackFinishedListener listener = null;
 	
 	// Byte mask for each bit-place
-	Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80};
+	Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
+			0x00}; // This last one is to accomodate the final bit - although it is not ready yet
 	
 	public interface PlaybackFinishedListener {
 		public void onPlaybackFinished(boolean cancelled);
@@ -30,32 +34,38 @@ public class SineGenerator {
 		this.listener = listener;
 	}
    
-	   public SineGenerator(Float... frequencies) {
+	   public SineGenerator(int fartFreq, int[] frequencies) {
 		   setFrequencies(frequencies);
+		   setFartFrequency(fartFreq);
 		   // Create the AudioTrack object in Stream Mode
            track = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, 
         		   AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, 
         		   trackBufferSize, AudioTrack.MODE_STREAM);
 	   }
 	   
-	   public void setFrequencies(Float... frequencies) {
+	   public void setFartFrequency(int fartFreq) {
+		   this.fartFrequency = fartFreq;
+		   this.digiFart = (float)(2.0f * Math.PI * fartFreq) / (float)sampleRate;
+	   }
+	   
+	   public void setFrequencies(int[] j) {
 		   // Sets the transmission frequencies and sets them up for processing
-		   this.frequencies = frequencies;
-		   scale = 1.0f / (float)frequencies.length;
-		   digiFreq = new float[frequencies.length];
+		   this.frequencies = j;
+		   scale = 1.0f / (float)j.length;
+		   digiFreq = new float[j.length];
 		   float twopie = (float) (2.0f * Math.PI);
 		   
-		   for (int i = 0; i < frequencies.length; i++) {
-			   digiFreq[i] = twopie * frequencies[i] / (float)sampleRate;
+		   for (int i = 0; i < j.length; i++) {
+			   digiFreq[i] = twopie * j[i] / (float)sampleRate;
 		   }
 	   }
 	   
-	   public void play(Byte... msg) {
+	   public void play(byte... msg) {
 		   if (task != null) {
 			   task.cancel(true);
 		   }
 		   task = new SoundTask();
-		   task.execute(msg);
+		   task.execute(new ByteMsg(msg));
 	   }
 	   
 	   public void cancel() {
@@ -69,7 +79,7 @@ public class SineGenerator {
 		   return (task != null);
 	   }
 
-	   private class SoundTask extends AsyncTask <Byte, Void, Void> {
+	   private class SoundTask extends AsyncTask <ByteMsg, Void, Void> {
 
 		   @Override
 		   protected void onPreExecute() {
@@ -77,23 +87,37 @@ public class SineGenerator {
 				   task = this;
 			   }
 		   }
+		   
+		   private short[] createFartBuffer(int angle, short[] buffer) {
+			   for (int i = 0; i < buffer.length; i++) {
+				   buffer[i] = (short)(Short.MAX_VALUE * (scale * Math.sin(angle * digiFart)));
+			   }
+			   return buffer;
+		   }
 		    
 		   @Override
-	       protected Void doInBackground(Byte... msg) {
+	       protected Void doInBackground(ByteMsg... msg) {
 			   if (task == this) {
-		           short[] buffer = new short[pulsesPerBuffer * pulseSampleWidth];
 		           int cur = 0;
 		           int angle = 0;
+		           // Create reusable buffer for transmission
+		           short[] buffer = new short[pulsesPerBuffer * pulseSampleWidth];
+		           // Createa a buffer for the start/stop fart tone
+		           short[] fartBuf = new short[fartSampleWidth];
+		           fartBuf = createFartBuffer(angle, buffer);
 		           
 		           // start playing the track
 		           track.play();
+		           // Send the fart buffer
+		           if (!isCancelled())
+		        	   track.write(fartBuf, 0, fartBuf.length);
 		           // Create a loop of buffer preparation and track playing
-		           while (!isCancelled() && cur < msg.length) {
+		           while (!isCancelled() && cur < msg[0].getLength()) {
 		        	   // Index in current buffer
 		        	   for(int bufCur = 0; bufCur < buffer.length; bufCur += pulseSampleWidth) {
-		        		   if (cur < msg.length) {
+		        		   if (cur < msg[0].getLength()) {
 				        	   // Get message byte
-				        	   byte m = msg[cur];
+				        	   byte m = msg[0].getByte(cur);
 				        	   // Prepare a buffer
 				        	   for (int i = bufCur; i < bufCur + pulseSampleWidth; i++) {
 				        		   buffer[i] = 0;
@@ -107,10 +131,13 @@ public class SineGenerator {
 				        	   cur++;
 		        		   } else break;
 		        	   }
-		        	   
 		        	   // Write to playback buffer
 		               track.write( buffer, 0, buffer.length );
 				   }
+		           
+		           // Send a finishing fart
+		           if (!isCancelled())
+		        	   track.write(fartBuf, 0, fartBuf.length);
 		           
 		           if (isCancelled()) {
 			           // Stop playback immediately and flush the buffer
@@ -134,4 +161,23 @@ public class SineGenerator {
 		   }
 
 	   }//end private class
+	   
+	   private static class ByteMsg {
+		   private byte[] msg = null;
+		   public ByteMsg(byte[] msg) {
+			   this.msg = msg;
+		   }
+		   
+		   public byte getByte(int position) {
+			   return msg[position];
+		   }
+		   
+		   public void setByte(int position, byte b) {
+			   msg[position] = b;
+		   }
+		   
+		   public int getLength() {
+			   return msg.length;
+		   }
+	   }
 }

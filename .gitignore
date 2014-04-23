@@ -1,3 +1,5 @@
-./Squealer_android/gen/*
-./Squealer_android/bin/*
-./workspace/*
+Squealer_android/gen
+Squealer_android/bin
+workspace
+.metadata
+!Squealer_android.apk

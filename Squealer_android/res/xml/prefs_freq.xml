@@ -1,41 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"> 
-    <PreferenceCategory android:title="Receiver Configuration">   
-	    <EditTextPreference
-		    android:key="@string/pref_receiver_carrier"
-		    android:defaultValue="21000"
-		    android:title="Receiver Carrier Frequency"
-		    android:inputType="number"
-		/>
-	    <EditTextPreference
-		    android:key="@string/pref_receiver_modulator"
-		    android:defaultValue="22000"
-		    android:title="Receiver Modulator Frequency"
-		    android:inputType="number"
-		/>
-	    <Preference 
-	        android:key="pref_receiver_match"
-	        android:defaultValue="true"
-	        android:title="Match to Transmitter"
-	    />
-    </PreferenceCategory>
-    <PreferenceCategory android:title="Transmitter Configuration">
-	    <EditTextPreference
-		    android:key="@string/pref_transmitter_carrier"
-		    android:defaultValue="21000"
-		    android:title="Transmission Carrier Frequency"
-		    android:inputType="number"
-		/>
-	    <EditTextPreference
-		    android:key="@string/pref_transmitter_modulator"
-		    android:defaultValue="22000"
-		    android:title="Transmission Modulator Frequency"
-		    android:inputType="number"
-		/>
-	    <Preference 
-	        android:key="pref_transmitter_match"
-	        android:defaultValue="true"
-	        android:title="Match to Receiver"
-	    />
-    </PreferenceCategory>
+    <Preference 
+        android:key="@string/default_pref"
+        android:title="Set To Inaudible Range (Default)"/>
+    <Preference 
+        android:key="@string/audible_pref"
+        android:title="Set To Audible Range"/>    
+    <EditTextPreference
+	    android:key="freq_fart"
+	    android:defaultValue="800"
+	    android:title="Fart Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b0"
+	    android:defaultValue="19000"
+	    android:title="Bit 0 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b1"
+	    android:defaultValue="19250"
+	    android:title="Bit 1 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b2"
+	    android:defaultValue="19500"
+	    android:title="Bit 2 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b3"
+	    android:defaultValue="19750"
+	    android:title="Bit 3 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b4"
+	    android:defaultValue="20000"
+	    android:title="Bit 4 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b5"
+	    android:defaultValue="20250"
+	    android:title="Bit 5 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b6"
+	    android:defaultValue="20500"
+	    android:title="Bit 6 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b7"
+	    android:defaultValue="20750"
+	    android:title="Bit 7 Frequency"
+	    android:inputType="number"
+	/>
+    <EditTextPreference
+	    android:key="freq_b8"
+	    android:defaultValue="21000"
+	    android:title="Bit 8 Frequency"
+	    android:inputType="number"
+	/>
 </PreferenceScreen>

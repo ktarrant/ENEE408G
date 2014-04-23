@@ -20,12 +20,8 @@
     <string name="config_car_freq_label">Carrier Freq.:</string>
     <string name="config_mod_freq_label">Modulating Freq.:</string>
     
-    <string name="pref_receiver_carrier">pref_receiver_carrier</string>
-	<string name="pref_receiver_modulator">pref_receiver_modulator</string>
-	<string name="pref_receiver_message">pref_receiver_message</string>
-	<string name="pref_transmitter_carrier">pref_transmitter_carrier</string>
-	<string name="pref_transmitter_modulator">pref_transmitter_modulator</string>
-	<string name="pref_transmitter_message">pref_transmitter_message</string>
+    <string name="default_pref">default</string>
+    <string name="audible_pref">audible</string>
     
     <string name="clear_label">Clear</string>
     

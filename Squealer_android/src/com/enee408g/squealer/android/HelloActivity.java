@@ -41,9 +41,6 @@ public class HelloActivity extends FragmentActivity {
         // fragments, so use getSupportFragmentManager.//
         mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mMainPagerAdapter);
-        
-        // Set up PreferenceHelper
-        PreferenceHelper.setContext(this);
     }
     
     @Override

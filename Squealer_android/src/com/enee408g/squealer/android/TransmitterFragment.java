@@ -1,5 +1,7 @@
 package com.enee408g.squealer.android;
 
+import java.io.UnsupportedEncodingException;
+
 import com.enee408g.squealer.android.SineGenerator.PlaybackFinishedListener;
 
 import android.content.SharedPreferences;
@@ -39,14 +41,13 @@ public class TransmitterFragment extends Fragment {
 
 				@Override
 				public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-					gen.setFrequencies((float)PreferenceHelper.getTransmitterCarrierFrequency(),
-				    		  (float)PreferenceHelper.getTransmitterModulatorFrequency());
+					gen.setFartFrequency(PreferenceHelper.getFartFrequency(getActivity()));
+					gen.setFrequencies(PreferenceHelper.getAllBitFrequencies(getActivity()));
 				}
 	      	});
 	      
-	      gen = new SineGenerator(
-	    		  (float)PreferenceHelper.getTransmitterCarrierFrequency(),
-	    		  (float)PreferenceHelper.getTransmitterModulatorFrequency());
+	      gen = new SineGenerator(PreferenceHelper.getFartFrequency(getActivity()),
+	    		  PreferenceHelper.getAllBitFrequencies(getActivity()));
 	      gen.setPlaybackFinishedListener(new PlaybackFinishedListener() {
 			@Override
 			public void onPlaybackFinished(boolean cancelled) {
@@ -73,15 +74,12 @@ public class TransmitterFragment extends Fragment {
 	  
 	  public void startPlaying() {
 		String msg = textView.getText().toString();
-		Byte[] b = new Byte[msg.length()];
-		for (int i = 0; i < msg.length(); i++) {
-			b[i] = 0;
-			switch(msg.charAt(i)) {
-			case '1': b[i] = 1; break;
-			case '2': b[i] = 2; break;
-			case '3': b[i] = 3; break;
-			default: b[i] = 0;
-			}
+		byte[] b;
+		try {
+			b = msg.getBytes("US-ASCII");
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			return;
 		}
 		gen.play(b);
 		goButton.setText(getString(R.string.transmitter_abort_label));
