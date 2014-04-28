@@ -1,176 +1,142 @@
 package com.enee408g.squealer.android;
 
-/*
- * The application needs to have the permission to write to external storage
- * if the output file is written to the external storage, and also the
- * permission to record audio. These permissions must be set in the
- * application's AndroidManifest.xml file, with something like:
- *
- * <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
- * <uses-permission android:name="android.permission.RECORD_AUDIO" />
- *
- */
-import android.app.Activity;
-import android.widget.LinearLayout;
-import android.os.Bundle;
-import android.os.Environment;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.content.Context;
-import android.util.Log;
-import android.media.MediaRecorder;
-import android.media.MediaPlayer;
-
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 
+import android.media.AudioFormat;
+import android.media.AudioRecord;
+import android.media.MediaRecorder;
 
-public class AudioRecorder extends Activity
-{
-    private static final String LOG_TAG = "AudioRecorder";
-    private static String mFileName = null;
+public class AudioRecorder {
+	int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+	int BytesPerElement = 2; // 2 bytes in 16bit format
+	private static final int RECORDER_SAMPLERATE = 8000;
+	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+	private AudioRecord recorder = null;
+	private Thread recordingThread = null;
+	private boolean isRecording = false;
+	private FFT fft = new FFT(BufferElements2Rec);
+	private short[] audBuf = new short[BufferElements2Rec];
+	private double[] inBuf = new double[BufferElements2Rec];
+	private double[] outBuf = new double[BufferElements2Rec];
+	private UpdateListener listener = null;
+	private int maxFreq = 0;
+	
+	public interface UpdateListener {
+		public void onUpdate(int dominantFrequency);
+	}
+	public void setUpdateListener(UpdateListener listener) {
+		this.listener = listener;
+	}
+	
 
-    private RecordButton mRecordButton = null;
-    private MediaRecorder mRecorder = null;
+	public void startRecording() {
 
-    private PlayButton   mPlayButton = null;
-    private MediaPlayer   mPlayer = null;
+	    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+	            RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+	            RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
 
-    private void onRecord(boolean start) {
-        if (start) {
-            startRecording();
-        } else {
-            stopRecording();
-        }
-    }
+	    recorder.startRecording();
+	    isRecording = true;
+	    recordingThread = new Thread(new Runnable() {
+	        public void run() {
+	            processLiveData();
+	        }
+	    }, "AudioRecorder Thread");
+	    recordingThread.start();
+	}
 
-    private void onPlay(boolean start) {
-        if (start) {
-            startPlaying();
-        } else {
-            stopPlaying();
-        }
-    }
+	    //convert short to byte
+	private byte[] short2byte(short[] sData) {
+	    int shortArrsize = sData.length;
+	    byte[] bytes = new byte[shortArrsize * 2];
+	    for (int i = 0; i < shortArrsize; i++) {
+	        bytes[i * 2] = (byte) (sData[i] & 0x00FF);
+	        bytes[(i * 2) + 1] = (byte) (sData[i] >> 8);
+	        sData[i] = 0;
+	    }
+	    return bytes;
 
-    private void startPlaying() {
-        mPlayer = new MediaPlayer();
+	}
+
+	  private void processData(short[] data) {
+		  for (int i = 0; i < data.length; i++) {
+			  inBuf[i] = (double)data[i] / 128.0f;
+		  }
+		  fft.fft(inBuf, outBuf);
+		  int dom = 0;
+		  for (int i = 0; i < outBuf.length; i++) {
+			  double samp = outBuf[i];
+			  double max = outBuf[dom];
+			  if (samp > max || samp < -max) {
+				  dom = i;
+			  }
+		  }
+		  maxFreq = dom;
+	  }
+	
+	private void processLiveData() {
+	    // Write the output audio in byte
+		
+		// Write the output audio in byte
+
+	    String filePath = "/sdcard/Squealer_test.csv";
+	    short sData[] = new short[BufferElements2Rec];
+
+	    FileOutputStream os = null;
+	    try {
+	        os = new FileOutputStream(filePath);
+	    } catch (FileNotFoundException e) {
+	        e.printStackTrace();
+	    }
+
+		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(os);
+	
+	    while (isRecording) {
+	        // gets the voice output from microphone to byte format
+
+	        recorder.read(sData, 0, BufferElements2Rec);
+	        System.out.println("Processing data: " + sData.toString());
+			for (int i = 0; i < sData.length; i++) {
+				inBuf[i] = (double)sData[i] / 128.0f;
+			}
+			fft.fft(inBuf, outBuf);
+			
+			// Create string
+			String msg = "";
+			for (int i = 0; i < outBuf.length; i++) {
+				 msg += String.format("%f, ", outBuf[i]);
+			}
+			msg += "\n";
+	        try {
+	            // // writes the data to file from buffer
+	            // // stores the voice buffer
+	            outputStreamWriter.write(msg);
+	        } catch (IOException e) {
+	            e.printStackTrace();
+	        }
+	    }
+	    
         try {
-            mPlayer.setDataSource(mFileName);
-            mPlayer.prepare();
-            mPlayer.start();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "prepare() failed");
-        }
-    }
+			outputStreamWriter.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
-    private void stopPlaying() {
-        mPlayer.release();
-        mPlayer = null;
-    }
-
-    private void startRecording() {
-        mRecorder = new MediaRecorder();
-        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mRecorder.setOutputFile(mFileName);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        try {
-            mRecorder.prepare();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "prepare() failed");
-        }
-
-        mRecorder.start();
-    }
-
-    private void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
-    }
-
-    class RecordButton extends Button {
-        boolean mStartRecording = true;
-
-        OnClickListener clicker = new OnClickListener() {
-            public void onClick(View v) {
-                onRecord(mStartRecording);
-                if (mStartRecording) {
-                    setText("Stop recording");
-                } else {
-                    setText("Start recording");
-                }
-                mStartRecording = !mStartRecording;
-            }
-        };
-
-        public RecordButton(Context ctx) {
-            super(ctx);
-            setText("Start recording");
-            setOnClickListener(clicker);
-        }
-    }
-
-    class PlayButton extends Button {
-        boolean mStartPlaying = true;
-
-        OnClickListener clicker = new OnClickListener() {
-            public void onClick(View v) {
-                onPlay(mStartPlaying);
-                if (mStartPlaying) {
-                    setText("Stop playing");
-                } else {
-                    setText("Start playing");
-                }
-                mStartPlaying = !mStartPlaying;
-            }
-        };
-
-        public PlayButton(Context ctx) {
-            super(ctx);
-            setText("Start playing");
-            setOnClickListener(clicker);
-        }
-    }
-
-    public AudioRecorder() {
-        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-        mFileName += "/AudioRecorder.3gp";
-    }
-
-    @Override
-    public void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
-
-        LinearLayout ll = new LinearLayout(this);
-        mRecordButton = new RecordButton(this);
-        ll.addView(mRecordButton,
-            new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                0));
-        mPlayButton = new PlayButton(this);
-        ll.addView(mPlayButton,
-            new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                0));
-        setContentView(ll);
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (mRecorder != null) {
-            mRecorder.release();
-            mRecorder = null;
-        }
-
-        if (mPlayer != null) {
-            mPlayer.release();
-            mPlayer = null;
-        }
-    }
+	public void stopRecording() {
+	    // stops the recording activity
+	    if (null != recorder) {
+	        isRecording = false;
+	        recorder.stop();
+	        recorder.release();
+	        recorder = null;
+	        recordingThread = null;
+	        if (listener != null) listener.onUpdate(RECORDER_SAMPLERATE / BufferElements2Rec * maxFreq);
+	    }
+	}
 }

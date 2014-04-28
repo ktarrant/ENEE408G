@@ -2,9 +2,6 @@ package com.enee408g.squealer.android;
 
 import java.io.IOException;
 
-import com.enee408g.squealer.android.AudioRecorder.PlayButton;
-import com.enee408g.squealer.android.AudioRecorder.RecordButton;
-
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.os.Environment;

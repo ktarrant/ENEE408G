@@ -30,4 +30,7 @@
     <string name="clear_label">Clear</string>
     
     <string name="settings_activity_label">Settings</string>
+    
+    <string name="test_label">Test Page</string>
+    <string name="test_start_label">Start Test</string>
 </resources>
