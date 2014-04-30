@@ -7,6 +7,7 @@ public class FFT {
 	  // Lookup tables. Only need to recompute when size of FFT changes.
 	  double[] cos;
 	  double[] sin;
+	  double[] baseFFT;
 
 	  public FFT(int n) {
 	      this.n = n;
@@ -24,7 +25,6 @@ public class FFT {
 	          cos[i] = Math.cos(-2 * Math.PI * i / n);
 	          sin[i] = Math.sin(-2 * Math.PI * i / n);
 	      }
-
 	  }
 
 	  public void fft(double[] x, double[] y) {

@@ -8,11 +8,12 @@ import java.io.OutputStreamWriter;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.AsyncTask;
 
 public class AudioRecorder {
-	int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+	int BufferElements2Rec = 2048; // want to play 2048 (2K) since 2 bytes we use only 1024
 	int BytesPerElement = 2; // 2 bytes in 16bit format
-	private static final int RECORDER_SAMPLERATE = 8000;
+	private static final int RECORDER_SAMPLERATE = 44100;
 	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 	private AudioRecord recorder = null;
@@ -26,27 +27,14 @@ public class AudioRecorder {
 	private int maxFreq = 0;
 	
 	public interface UpdateListener {
-		public void onUpdate(int dominantFrequency);
+		public void onUpdate(double[] fft_result, double sampleFrequency);
 	}
 	public void setUpdateListener(UpdateListener listener) {
 		this.listener = listener;
 	}
 	
-
-	public void startRecording() {
-
-	    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-	            RECORDER_SAMPLERATE, RECORDER_CHANNELS,
-	            RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
-
-	    recorder.startRecording();
-	    isRecording = true;
-	    recordingThread = new Thread(new Runnable() {
-	        public void run() {
-	            processLiveData();
-	        }
-	    }, "AudioRecorder Thread");
-	    recordingThread.start();
+	public void getPiece() {
+		new ListenTask().execute();
 	}
 
 	    //convert short to byte
@@ -77,27 +65,37 @@ public class AudioRecorder {
 		  }
 		  maxFreq = dom;
 	  }
-	
-	private void processLiveData() {
-	    // Write the output audio in byte
+	  
+	class ListenTask extends AsyncTask<Void, Void, Void> {
+		OutputStreamWriter outputStreamWriter;
+		short sData[];
 		
-		// Write the output audio in byte
+		@Override
+		protected void onPreExecute() {
+		    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+		            RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+		            RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
 
-	    String filePath = "/sdcard/Squealer_test.csv";
-	    short sData[] = new short[BufferElements2Rec];
+		    recorder.startRecording();
+		    isRecording = true;
+			
+			// Write the output audio in byte
 
-	    FileOutputStream os = null;
-	    try {
-	        os = new FileOutputStream(filePath);
-	    } catch (FileNotFoundException e) {
-	        e.printStackTrace();
-	    }
+		    String filePath = "/sdcard/Squealer_test.csv";
+		    sData = new short[BufferElements2Rec];
 
-		OutputStreamWriter outputStreamWriter = new OutputStreamWriter(os);
-	
-	    while (isRecording) {
-	        // gets the voice output from microphone to byte format
+		    FileOutputStream os = null;
+		    try {
+		        os = new FileOutputStream(filePath);
+		    } catch (FileNotFoundException e) {
+		        e.printStackTrace();
+		    }
 
+			outputStreamWriter = new OutputStreamWriter(os);
+		}
+
+		@Override
+		protected Void doInBackground(Void... params) {
 	        recorder.read(sData, 0, BufferElements2Rec);
 	        System.out.println("Processing data: " + sData.toString());
 			for (int i = 0; i < sData.length; i++) {
@@ -118,25 +116,26 @@ public class AudioRecorder {
 	        } catch (IOException e) {
 	            e.printStackTrace();
 	        }
-	    }
-	    
-        try {
-			outputStreamWriter.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		}
-	}
-
-	public void stopRecording() {
-	    // stops the recording activity
-	    if (null != recorder) {
-	        isRecording = false;
-	        recorder.stop();
-	        recorder.release();
-	        recorder = null;
-	        recordingThread = null;
-	        if (listener != null) listener.onUpdate(RECORDER_SAMPLERATE / BufferElements2Rec * maxFreq);
-	    }
+		
+		@Override
+		protected void onPostExecute(Void v) {
+		    // stops the recording activity
+		    if (null != recorder) {
+		        isRecording = false;
+		        recorder.stop();
+		        recorder.release();
+		        recorder = null;
+		        recordingThread = null;
+		        if (listener != null) listener.onUpdate(outBuf, RECORDER_SAMPLERATE);
+		    }
+	        try {
+				outputStreamWriter.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 }

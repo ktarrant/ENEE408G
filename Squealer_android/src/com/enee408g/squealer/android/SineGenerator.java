@@ -13,7 +13,7 @@ public class SineGenerator {
 	private int[] frequencies;
 	private int fartFrequency;
 	private int sampleRate = 44100;
-	private int pulseSampleWidth = 2048;
+	private int pulseSampleWidth = 2048; // 
 	private int fartSampleWidth = pulseSampleWidth * 4;
 	private int pulsesPerBuffer = 2;
     private int trackBufferSize = 2048;
