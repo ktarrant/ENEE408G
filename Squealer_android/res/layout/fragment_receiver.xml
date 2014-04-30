@@ -32,7 +32,7 @@
         android:inputType="textMultiLine" />
         
     <Button
-        android:id="@+id/receiver_button"
+        android:id="@+id/receiver_button_record"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/receiver_message"
@@ -66,5 +66,13 @@
         android:layout_below="@+id/receiver_swipe_tip"
         android:layout_marginTop="15dp"
         android:text="@string/receiver_message_label" />
+
+    <Button
+        android:id="@+id/receiver_button_play"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/receiver_button_record"
+        android:layout_below="@+id/receiver_button_record"
+        android:text="Start Playing" />
 
 </RelativeLayout>

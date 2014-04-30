@@ -7,9 +7,6 @@
     <uses-sdk
         android:minSdkVersion="11"
         android:targetSdkVersion="19" />
-    
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
         android:allowBackup="true"
@@ -24,13 +21,6 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-        
-        <activity android:name="com.enee408g.squealer.android.SettingsActivity"
-            android:label="@string/settings_activity_label"
-            android:parentActivityName="com.enee408g.squealer.android.HelloActivity">
-            <meta-data android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.enee408g.squealer.android.HelloActivity" />
         </activity>
     </application>
 
