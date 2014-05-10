@@ -1,5 +1,6 @@
 package com.enee408g.squealer.android;
 
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -12,11 +13,12 @@ public class SineGenerator {
 	
 	private int[] frequencies;
 	private int fartFrequency;
-	private int sampleRate = 44100;
-	private int pulseSampleWidth = 2048; // 
-	private int fartSampleWidth = pulseSampleWidth * 4;
-	private int pulsesPerBuffer = 2;
-    private int trackBufferSize = 2048;
+	private int sampleRate;
+	private int pulseSampleWidth; 
+	private int fartSampleWidth;
+	private int pulsesPerBuffer;
+    private int trackBufferSize;
+    private float dutyCycle;
 	private float scale = 1.0f;
 	private float[] digiFreq = null;
 	private float digiFart;
@@ -34,7 +36,17 @@ public class SineGenerator {
 		this.listener = listener;
 	}
    
-	   public SineGenerator(int fartFreq, int[] frequencies) {
+	public void updatePrefs(Context context) {
+		sampleRate 			= PreferenceHelper.getSampleRate(context);
+		pulseSampleWidth 	= PreferenceHelper.getPulseSampleWidth(context);
+		fartSampleWidth 	= PreferenceHelper.getFartSampleWidth(context);
+		pulsesPerBuffer 	= PreferenceHelper.getPulsesPerBuffer(context);
+	    trackBufferSize 	= PreferenceHelper.getTrackBufferSize(context);
+	    dutyCycle			= PreferenceHelper.getDutyCycle(context);
+	}
+	
+	   public SineGenerator(Context context, int fartFreq, int[] frequencies) {
+		   updatePrefs(context);
 		   setFrequencies(frequencies);
 		   setFartFrequency(fartFreq);
 		   // Create the AudioTrack object in Stream Mode
@@ -109,8 +121,8 @@ public class SineGenerator {
 		           // start playing the track
 		           track.play();
 		           // Send the fart buffer
-		           if (!isCancelled())
-		        	   track.write(fartBuf, 0, fartBuf.length);
+		           //if (!isCancelled())
+		           //	   track.write(fartBuf, 0, fartBuf.length);
 		           // Create a loop of buffer preparation and track playing
 		           while (!isCancelled() && cur < msg[0].getLength()) {
 		        	   // Index in current buffer
@@ -120,11 +132,16 @@ public class SineGenerator {
 				        	   byte m = msg[0].getByte(cur);
 				        	   // Prepare a buffer
 				        	   for (int i = bufCur; i < bufCur + pulseSampleWidth; i++) {
+				        		   float pcnt = ((float)(i - bufCur))/((float)pulseSampleWidth);
 				        		   buffer[i] = 0;
-			        			   for (int b = 0; b < digiFreq.length; b++) {
-			        				   if ((m & MASK[b]) != 0)
-			        					   buffer[i] += (short)(Short.MAX_VALUE * (scale * Math.sin(angle * digiFreq[b])));
-			        			   }
+				        		   if (pcnt < dutyCycle) {
+				        			   for (int b = 0; b < digiFreq.length; b++) {
+				        				   if ((m & MASK[b]) != 0) {
+				        					   buffer[i] += (short)(Short.MAX_VALUE * 
+				        							   (scale * Math.sin(angle * digiFreq[b])));
+				        				   }
+				        			   }
+				        		   }
 				        		   // Keep angle seperate from i for consistency across buffers
 				        		   angle++;
 				        	   }
@@ -137,7 +154,7 @@ public class SineGenerator {
 		           
 		           // Send a finishing fart
 		           if (!isCancelled())
-		        	   track.write(fartBuf, 0, fartBuf.length);
+		           	   track.write(fartBuf, 0, fartBuf.length);
 		           
 		           if (isCancelled()) {
 			           // Stop playback immediately and flush the buffer

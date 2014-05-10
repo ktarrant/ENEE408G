@@ -7,4 +7,9 @@
         android:title="Frequency Preferences"
         android:summary="Customize the frequencies used to transmit your data." />
     
+    <header
+        android:fragment="com.enee408g.squealer.android.SettingsActivity$TransPrefsFragment"
+        android:title="Transmission Preferences"
+        android:summary="Customize the parameters used to transmit your data." />
+    
 </preference-headers>

@@ -46,7 +46,7 @@ public class TransmitterFragment extends Fragment {
 				}
 	      	});
 	      
-	      gen = new SineGenerator(PreferenceHelper.getFartFrequency(getActivity()),
+	      gen = new SineGenerator(getActivity(), PreferenceHelper.getFartFrequency(getActivity()),
 	    		  PreferenceHelper.getAllBitFrequencies(getActivity()));
 	      gen.setPlaybackFinishedListener(new PlaybackFinishedListener() {
 			@Override

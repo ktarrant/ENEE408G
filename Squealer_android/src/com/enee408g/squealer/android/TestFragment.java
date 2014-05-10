@@ -1,6 +1,9 @@
 package com.enee408g.squealer.android;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.achartengine.ChartFactory;
 import org.achartengine.GraphicalView;
@@ -11,7 +14,9 @@ import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
-import com.enee408g.squealer.android.AudioRecorder.UpdateListener;
+import com.enee408g.squealer.android.AudioRecorder.BufferListener;
+import com.enee408g.squealer.android.AudioRecorder.FartListener;
+import com.enee408g.squealer.android.AudioRecorder.ValueListener;
 
 import android.support.v4.app.Fragment;
 import android.os.AsyncTask;
@@ -38,6 +43,7 @@ public class TestFragment extends Fragment {
 	
 	private final static String TAG = "TestFragment";
 	private boolean isRecording = false;
+	private boolean startedMessage = false;
 	private AudioRecorder recorder = null;
 	
 	  /** The main dataset that includes all the series that go into a chart. */
@@ -46,8 +52,6 @@ public class TestFragment extends Fragment {
 	  private XYMultipleSeriesRenderer mRenderer = new XYMultipleSeriesRenderer();
 	  /** The chart view that displays the data. */
 	  private GraphicalView mChartView;
-	  
-	  private double minFrequency = 18000.0;
 	  
 	  @Override
 	  public void onCreate(Bundle savedInstanceState) {
@@ -64,7 +68,7 @@ public class TestFragment extends Fragment {
 		    mRenderer.setPointSize(5);
 	  }
 	  
-	  public void addNewSeries(double[] setToPlot, double sampleFrequency) {
+	  public void addNewSeries(double[] setToPlot, double sampleFrequency, double minFrequency) {
 	        String seriesTitle = "Series " + (mDataset.getSeriesCount() + 1);
 	        // create a new series of data
 	        XYSeries series = new XYSeries(seriesTitle);
@@ -74,8 +78,9 @@ public class TestFragment extends Fragment {
 	        double binWidth = sampleFrequency / (double)setToPlot.length;
 	        mDataset.addSeries(series);
 	        for (int x = 0; x < setToPlot.length/2; x++) {
-	        	if (binWidth * x > minFrequency) series.add(binWidth*x, setToPlot[x]);
-	        	//else series.add(binWidth*x, 0);
+	        	if (binWidth * x > minFrequency) { // only check desired frequencies
+	        		series.add(binWidth*x, setToPlot[x]);
+	        	}
 	        }
 	        //mCurrentSeries = series;
 	        // create a new renderer for the new series
@@ -91,6 +96,48 @@ public class TestFragment extends Fragment {
 	        mChartView.repaint();
 	  }
 	  
+		Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
+				0x00}; // This last one is to accomodate the final bit - although it is not ready yet
+	  
+	  public byte getValue(double[] fft_result, double minFrequency, double sampleFrequency) {
+		double binWidth = sampleFrequency / (double)fft_result.length;
+		float dbsense = PreferenceHelper.getDbSensitivity(getActivity());
+		boolean inBand = false;
+		double minVal = 0.0;
+		double maxVal = 100000.0;
+		double minFreq = maxVal;
+		double maxFreq = minVal;
+		ArrayList<double[]> bands = new ArrayList<double[]>();
+		  for (int i = 0; i < fft_result.length/2; i++) {
+			double freq = (double)i * binWidth;
+			if (freq > minFrequency && freq < (sampleFrequency - minFrequency)) {
+				if (fft_result[i] > dbsense) {
+					if (freq < minFreq) minFreq = freq;
+					if (freq > maxFreq) maxFreq = freq;
+					if (!inBand) inBand = true;
+				} else {
+					if (inBand) {
+						inBand = false;
+						bands.add(new double[] {minFreq, maxFreq});
+						minFreq = maxVal;
+						maxFreq = minVal;
+					}
+				}
+		  	}
+		  }
+		 byte rval = 0;
+		 for (double[] band : bands) {
+			 int[] freqs = PreferenceHelper.getAllBitFrequencies(getActivity());
+			 for (int i = 0; i < freqs.length; i++) {
+				 if (freqs[i] > band[0] && freqs[i] < band[1]) {
+					 rval |= MASK[i];
+				 }
+			 }
+		 }
+		 return rval;
+		  //return (double[][])bands.toArray(new double[bands.size()][2]);
+	  }
+	  
 	  @Override
 	  public View onCreateView(LayoutInflater inflater,
 	          ViewGroup container, Bundle savedInstanceState) {
@@ -100,26 +147,59 @@ public class TestFragment extends Fragment {
 	      final Button startButton = (Button) rootView.findViewById(R.id.test_button_record);
 	      final EditText numberDisplay = (EditText) rootView.findViewById(R.id.test_numberDisplay);
 
-	      recorder = new AudioRecorder();
-	      recorder.setUpdateListener(new UpdateListener() {
+	      recorder = new AudioRecorder(getActivity());
+	      recorder.setBufferListener(new BufferListener() {
 			@Override
-			public void onUpdate(double[] fft_result, double sampleFrequency) {
-				startButton.setText("Start Test");
-				addNewSeries(fft_result, sampleFrequency);
+			public void onBufferUpdate(short[] msg) {
+				//Log.i(TAG, String.format("Buffer received: %d", msg.length));
+				//if (startedMessage) {
+					recorder.processBuffer(msg);
+				//} else {
+				//	recorder.checkForFart(msg);
+				//}
+//				double binWidth = sampleFrequency / (double)fft_result.length;
+//				startButton.setText("Start Test");
+//				startButton.setEnabled(true);
+//				byte msg = getValue(fft_result, minFrequency, sampleFrequency);
+//				String outMsg = String.format("%16s", Integer.toBinaryString(msg)).replace(' ', '0');
+//				numberDisplay.setText(outMsg);
+//				addNewSeries(fft_result, sampleFrequency, minFrequency);
 			}
 	      });
-	      
+	      recorder.setValueListener(new ValueListener() {
+			@Override
+			public void onValueUpdate(byte[] msg) {
+//				Log.i(TAG, String.format("FFT received: %d", msg.length));
+				String outMsg = "";
+				for (byte m : msg)
+					outMsg += String.format("%8s", Integer.toBinaryString(m)).replace(' ', '0');
+				numberDisplay.setText(outMsg);
+			}
+	      });
+//	      recorder.setFartListener(new FartListener() {
+//			@Override
+//			public void onFartUpdate() {
+//				if (startedMessage) {
+//					recorder.stopRecording();
+//					numberDisplay.setText(getString(R.string.receiver_start_label) + " (Success)");
+//				} else {
+//					numberDisplay.setText("Recording!");
+//					startedMessage = true;
+//				}
+//			}
+//	      });
 	      startButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
-				isRecording = !isRecording;
-                if (isRecording) {
-                    startButton.setText("Stop Test");
-                    recorder.getPiece();
+                if (recorder.isRecording()) {
+                    startButton.setText(getString(R.string.receiver_start_label));
+                    recorder.stopRecording();
+                    //numberDisplay.setText("Aborted.");
                 } else {
-                	// TODO: Cancel recording here
-                    //startButton.setText("Start Test");
-                    //recorder.stopRecording();
+                	startButton.setText(getString(R.string.receiver_abort_label));
+                	//numberDisplay.setText("Waiting for fart...");
+                	//startedMessage = false;
+                	recorder.startRecording();
                 }
 			}
 	    	  

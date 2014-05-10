@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"> 
+    <Preference 
+        android:key="@string/default_pref"
+        android:title="Set To Defaults"/>  
+    <EditTextPreference
+        android:key="db_sens"
+        android:defaultValue="60"
+        android:title="Decibel Sensitivity"
+        android:inputType="numberDecimal"
+        android:tag="dB" />
+    <EditTextPreference
+        android:key="sampleRate"
+        android:defaultValue="44100"
+        android:title="Sample Rate"
+        android:inputType="number"
+        android:tag="Hz" />
+    <EditTextPreference
+        android:key="pulseSampleWidth"
+        android:defaultValue="2048"
+        android:title="Pulse Sample Width"
+        android:inputType="number"
+        android:tag="samples" />
+    <EditTextPreference
+        android:key="fartSampleWidth"
+        android:defaultValue="8096"
+        android:title="Fart Sample Width"
+        android:inputType="number"
+        android:tag="samples" />
+	<EditTextPreference
+        android:key="pulsesPerBuffer"
+        android:defaultValue="2"
+        android:title="Pulses Per Buffer"
+        android:inputType="number"
+        android:tag="pulses" />
+	<EditTextPreference
+        android:key="trackBufferSize"
+        android:defaultValue="2048"
+        android:title="Track Buffer Size"
+        android:inputType="number"
+        android:tag="samples" />
+	<EditTextPreference
+	    android:key="dutyCycle"
+	    android:defaultValue="0.75"
+	    android:title="Duty Cycle (% of pulse w/ content)"
+	    android:inputType="numberDecimal"
+	    android:tag="percent" />
+</PreferenceScreen>

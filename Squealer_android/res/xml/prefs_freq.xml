@@ -11,59 +11,69 @@
 	    android:defaultValue="800"
 	    android:title="Fart Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b0"
 	    android:defaultValue="19000"
 	    android:title="Bit 0 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b1"
 	    android:defaultValue="19250"
 	    android:title="Bit 1 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b2"
 	    android:defaultValue="19500"
 	    android:title="Bit 2 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b3"
 	    android:defaultValue="19750"
 	    android:title="Bit 3 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b4"
 	    android:defaultValue="20000"
 	    android:title="Bit 4 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b5"
 	    android:defaultValue="20250"
 	    android:title="Bit 5 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b6"
 	    android:defaultValue="20500"
 	    android:title="Bit 6 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b7"
 	    android:defaultValue="20750"
 	    android:title="Bit 7 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
     <EditTextPreference
 	    android:key="freq_b8"
 	    android:defaultValue="21000"
 	    android:title="Bit 8 Frequency"
 	    android:inputType="number"
+	    android:tag="Hz"
 	/>
 </PreferenceScreen>

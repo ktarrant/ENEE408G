@@ -1,145 +1,74 @@
 package com.enee408g.squealer.android;
 
-import java.io.IOException;
+
+import com.enee408g.squealer.android.AudioRecorder.BufferListener;
+import com.enee408g.squealer.android.AudioRecorder.ValueListener;
 
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.content.Intent;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
+import android.widget.EditText;
 
 public class ReceiverFragment extends Fragment {
 	
 	private final static String TAG = "ReceiverFragment";
+	private AudioRecorder recorder = null;
+	Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
+			0x00}; // This last one is to accomodate the final bit - although it is not ready yet
+	String curMsg = "";
 	
-	boolean isRecording = false;//false means not listening
-	
-	private static String mFileName = null;
-
-    private MediaRecorder mRecorder = null;
-    private MediaPlayer   mPlayer = null;
-
-    private void onRecord(boolean start) {
-        if (start) {
-            startRecording();
-        } else {
-            stopRecording();
-            Log.i(TAG, "RECEIVED MESSAGE: " + DecodeRecording.decodeMessage(getActivity(), mFileName, 800, 8));
-        }
-    }
-
-    private void onPlay(boolean start) {
-        if (start) {
-            startPlaying();
-        } else {
-            stopPlaying();
-        }
-    }
-
-    private void startPlaying() {
-        mPlayer = new MediaPlayer();
-        try {
-            mPlayer.setDataSource(mFileName);
-            mPlayer.prepare();
-            mPlayer.start();
-        } catch (IOException e) {
-            Log.e(TAG, "prepare() failed");
-        }
-    }
-
-    private void stopPlaying() {
-        mPlayer.release();
-        mPlayer = null;
-    }
-
-    private void startRecording() {
-        mRecorder = new MediaRecorder();
-        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mRecorder.setOutputFile(mFileName);
-        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        try {
-            mRecorder.prepare();
-        } catch (IOException e) {
-            Log.e(TAG, "prepare() failed");
-        }
-
-        mRecorder.start();
-    }
-
-    private void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
-    }
-	
+	@Override
+	public void onPause() {
+		super.onPause();
+		if (recorder != null) recorder.stopRecording();
+	}
+	  
 	  @Override
 	  public View onCreateView(LayoutInflater inflater,
 	          ViewGroup container, Bundle savedInstanceState) {
 	      View rootView = inflater.inflate(
 	              R.layout.fragment_receiver, container, false);
 	      
-          mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
-          mFileName += "/AudioRecorder.3gp";
-	      
 	      final Button startButton = (Button) rootView.findViewById(R.id.receiver_button_record);
-	      final Button playButton = (Button) rootView.findViewById(R.id.receiver_button_play);
-	      
+	      final EditText numberDisplay = (EditText) rootView.findViewById(R.id.receiver_message);
+
+	      recorder = new AudioRecorder(getActivity());
+	      recorder.setBufferListener(new BufferListener() {
+			@Override
+			public void onBufferUpdate(short[] msg) {
+				recorder.processBuffer(msg);
+			}
+	      });
+	      recorder.setValueListener(new ValueListener() {
+			@Override
+			public void onValueUpdate(byte[] msg) {
+				curMsg += new String(msg);//String.format("%8s", Integer.toBinaryString(m)).replace(' ', '0');
+				numberDisplay.setText(curMsg);
+			}
+	      });
 	      startButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
-				isRecording = !isRecording;
-                onRecord(isRecording);
-                if (isRecording) {
-                    startButton.setText("Stop recording");
+                if (recorder.isRecording()) {
+                    startButton.setText(getString(R.string.receiver_start_label));
+                    recorder.stopRecording();
+                    //numberDisplay.setText("Aborted.");
                 } else {
-                    startButton.setText("Start recording");
+                	startButton.setText(getString(R.string.receiver_abort_label));
+                	//numberDisplay.setText("Waiting for fart...");
+                	recorder.startRecording();
+                	curMsg = "";
                 }
 			}
 	    	  
 	      });
 	      
-	      playButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-			  isRecording = !isRecording;
-              onPlay(isRecording);
-              if (isRecording) {
-                  playButton.setText("Stop playing");
-              } else {
-                  playButton.setText("Start playing");
-              }
-			}
-	      });
-	      
-	      Log.i("ENEE408G", "ReceiverFragment onCreateView");
-	      
-	      
 	      return rootView;
 	      
 	  }
-	      
-    @Override
-    public void onPause() {
-        super.onPause();
-        if (mRecorder != null) {
-            mRecorder.release();
-            mRecorder = null;
-        }
-
-        if (mPlayer != null) {
-            mPlayer.release();
-            mPlayer = null;
-        }
-    }
-	      
 	  
 }
