@@ -26,6 +26,7 @@ public class ReceiverFragment extends Fragment {
 		super.onPause();
 		if (recorder != null) recorder.stopRecording();
 	}
+	
 	  
 	  @Override
 	  public View onCreateView(LayoutInflater inflater,
@@ -35,7 +36,7 @@ public class ReceiverFragment extends Fragment {
 	      
 	      final Button startButton = (Button) rootView.findViewById(R.id.receiver_button_record);
 	      final EditText numberDisplay = (EditText) rootView.findViewById(R.id.receiver_message);
-
+	      
 	      recorder = new AudioRecorder(getActivity());
 	      recorder.setBufferListener(new BufferListener() {
 			@Override
@@ -56,17 +57,14 @@ public class ReceiverFragment extends Fragment {
                 if (recorder.isRecording()) {
                     startButton.setText(getString(R.string.receiver_start_label));
                     recorder.stopRecording();
-                    //numberDisplay.setText("Aborted.");
                 } else {
                 	startButton.setText(getString(R.string.receiver_abort_label));
-                	//numberDisplay.setText("Waiting for fart...");
                 	recorder.startRecording();
                 	curMsg = "";
                 }
 			}
 	    	  
 	      });
-	      
 	      return rootView;
 	      
 	  }

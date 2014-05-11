@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -35,11 +36,12 @@ public class AudioRecorder {
 	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 	private AudioRecord recorder = null;
 	private FFT fft;
-	private double[] inBuf;
-	private double[] outBuf;
+	private int quickLen = 512;
+	private FFT miniFFT = new FFT(quickLen);
 	private BufferListener bufListener = null;
 	private ValueListener valueListener = null;
 	private FartListener fartListener = null;
+	private StartTask srtTask = null;
 	private ListenTask recTask = null;
 	private static final String TAG = "AudioRecorder";
 	
@@ -94,8 +96,6 @@ public class AudioRecorder {
 	public AudioRecorder(Context context) {
 		updatePrefs(context);
 		fft = new FFT(bufferSize);
-		this.inBuf = new double[bufferSize];
-		this.outBuf = new double[bufferSize];
 		setFrequencies(PreferenceHelper.getAllBitFrequencies(context));
 		setFartFrequency(PreferenceHelper.getFartFrequency(context));
 	}
@@ -121,7 +121,7 @@ public class AudioRecorder {
 	Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
 			0x00}; // This last one is to accomodate the final bit - although it is not ready yet
 	
-	public List<double[]> getBands(double[] fft_result) {
+	public List<double[]> getBands(double[] fft_result, double sens) {
 		double minVal = 0.0;
 		double maxVal = 100000.0;
 		double binWidth = sampleRate / (double)fft_result.length;
@@ -132,7 +132,7 @@ public class AudioRecorder {
 		  for (int i = 0; i < fft_result.length/2; i++) {
 			double freq = (double)i * binWidth;
 			if (freq < sampleRate/2) {//(freq > minFrequency && freq < (sampleRate - minFrequency)) {
-				if (fft_result[i] > dbSens) {
+				if (fft_result[i] > sens) {
 					if (freq < minFreq) minFreq = freq;
 					if (freq > maxFreq) maxFreq = freq;
 					if (!inBand) inBand = true;
@@ -164,23 +164,66 @@ public class AudioRecorder {
 	  
 	public boolean getFart(List<double[]> bands) {
 		for (double[] band : bands) {
-			//Log.i(TAG, String.format("%f < %f < %f", band[0], (float)fartFrequency, band[1]));
+			Log.i(TAG, String.format("%f < %f < %f", band[0], (float)fartFrequency, band[1]));
 			if (fartFrequency > band[0] && fartFrequency < band[1]) {
 				return true;
 			}
 		}
 		return false;
 	}
+	
+	double[] miniInBuf = new double[quickLen];
+	double[] miniOutBuf = new double[quickLen];//
+	//
+	
+	public boolean[] quickFartCheck(short[] buf) {
+		boolean[] rval = new boolean[buf.length / quickLen];
+		int minVal = (int)(((float)(fartFrequency-250)/(float)sampleRate)*(float)quickLen);
+	    int maxVal = (int)(((float)(fartFrequency+250)/(float)sampleRate)*(float)quickLen);
+		double binWidth = sampleRate/quickLen;
+		for (int i = 0; i < rval.length; i++) { // i = chunk #
+			rval[i] = false;
+			for (int j = 0; j < quickLen; j++) { // index in chunk
+				miniInBuf[j] = (double)buf[j+i*quickLen] / 128.0f;
+				miniOutBuf[j] = 0;
+			}
+			miniFFT.fft(miniInBuf, miniOutBuf);
+			for (int j = 0; j < quickLen; j++) {
+				miniInBuf[j] = 10*Math.log10(miniInBuf[j]*miniInBuf[j]+miniOutBuf[j]*miniOutBuf[j]);
+			}
+//			rval[i] = getFart(getBands(miniInBuf, dbSens/2));
+			//String msg = String.valueOf(minVal) + " < [";
+			for (int j = minVal; j < maxVal; j++) {
+				//msg += String.valueOf(miniInBuf[j]) + ", ";
+				if (miniInBuf[j] > dbSens/2) {
+					rval[i] = true;
+					break;
+				}
+			}
+		    //msg += "] < " + String.valueOf(maxVal);
+		   /// Log.i(TAG, msg);
+			//Log.i(TAG, String.valueOf(i) + ": " + String.valueOf(rval[i]));
+		}
+		return rval;
+	}
 
 	public void processBuffer(short[] buf) {
 		new runFFT().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, buf);
 	}
 	
-	/*public void checkForFart(short[] buf) {
-		new runFFT(true).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, buf);
-	}*/
+	//public void checkForFart(short[] buf) {
+	//	new runFFT(true).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, buf);
+	//}
 	
 	class runFFT extends AsyncTask<short[], Void, List<Byte>> {
+		
+		private double[] inBuf;
+		private double[] outBuf;
+		
+		public runFFT() {
+			this.inBuf = new double[bufferSize];
+			this.outBuf = new double[bufferSize];
+		}
 		
 		@Override
 		protected List<Byte> doInBackground(short[]... data) {
@@ -201,7 +244,7 @@ public class AudioRecorder {
 					for (int j = 0; j < d.length; j++) {
 						fft_result[j] = 10*Math.log10(inBuf[j]*inBuf[j]+outBuf[j]*outBuf[j]);
 					}
-					List<double[]> bands = getBands(fft_result);
+					List<double[]> bands = getBands(fft_result, dbSens);
 					//boolean fartFound = getFart(bands);
 					byte val = getValue(bands);
 					if (val != 0) msg.add(val);
@@ -222,10 +265,55 @@ public class AudioRecorder {
 			}
 		}
 	}
-
-	class ListenTask extends AsyncTask<Void, short[], Void> {
-		OutputStreamWriter outputStreamWriter;
+	
+	
+	
+	class StartTask extends AsyncTask<Void, Boolean, Void> {
+		
 		short[] sData;
+		double[] inBuf;
+		double[] outBuf;
+		
+		@Override
+		protected void onPreExecute() {
+		    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+		            sampleRate, RECORDER_CHANNELS,
+		            RECORDER_AUDIO_ENCODING, bufferSize * BytesPerElement);
+
+		    recorder.startRecording();
+		    srtTask = this;
+		    sData = new short[quickLen];
+		    inBuf = new double[quickLen];
+		    outBuf = new double[quickLen];
+		}
+		
+		@Override
+		protected Void doInBackground(Void... params) {
+			while (!isCancelled()) {
+				int readCount = recorder.read(sData, 0, bufferSize);
+				for (int i = 0; i < quickLen; i++) {
+					inBuf[i] = (double)sData[i] / 128.0f;
+					outBuf[i] = 0.0f;
+					//long t1 = System.nanoTime();
+				}
+				fft.fft(inBuf, outBuf);
+				for (int i = 0; i < quickLen; i++) {
+					inBuf[i] = 10*Math.log10(inBuf[i]*inBuf[i]+outBuf[i]*outBuf[i]);
+				}
+			}
+			return null;
+		}
+		
+		@Override
+		protected void onCancelled() {
+			destroy();
+		}
+	}
+	
+	class ListenTask extends AsyncTask<Void, short[], Void> {
+		short[] sData;
+		boolean msgStarted = false;
+		boolean aligning = false;
 		
 		@Override
 		protected void onPreExecute() {
@@ -247,8 +335,8 @@ public class AudioRecorder {
 		@Override
 		protected Void doInBackground(Void... params) {
 			while (!isCancelled()) {
-				int readCount = recorder.read(sData, 0, bufferSize);
-	        	//System.out.println(String.format("Recording time: %f sec", (float)readCount / (float)sampleRate));
+				int readCount = recorder.read(sData, 0, quickLen);
+				//System.out.println(String.format("Recording time: %f sec", (float)readCount / (float)sampleRate));
 				publishProgress(sData);
 			}
 			Log.i(TAG, "Cancelled!");
@@ -264,15 +352,16 @@ public class AudioRecorder {
 		protected void onPostExecute(Void v) {
 			destroy();
 		}
-		
-		void destroy() {
-		    // stops the recording activity
-		    if (null != recorder) {
-		        recTask = null;
-		        recorder.stop();
-		        recorder.release();
-		        recorder = null;
-		    }
-		}
+	
+	}
+	
+	void destroy() {
+	    // stops the recording activity
+	    if (null != recorder) {
+	        recTask = null;
+	        recorder.stop();
+	        recorder.release();
+	        recorder = null;
+	    }
 	}
 }

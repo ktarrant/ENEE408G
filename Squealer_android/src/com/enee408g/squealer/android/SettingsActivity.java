@@ -141,7 +141,7 @@ public class SettingsActivity extends PreferenceActivity {
     		audPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 				@Override
 				public boolean onPreferenceClick(Preference preference) {
-					PreferenceHelper.setFrequencyRange(getActivity(), 16000, 500);
+					PreferenceHelper.setFrequencyRange(getActivity(), 10000, 500);
 					return false;
 				}
     		});

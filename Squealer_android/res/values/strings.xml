@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Squealer</string>
+    <string name="app_name">Airborne</string>
     
     <string name="receiver_label">Receiver</string>
     <string name="receiver_swipe_tip">Swipe left to transmit.</string>

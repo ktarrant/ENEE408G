@@ -72,7 +72,7 @@ public class PreferenceHelper {
    }
    
    public static void setFrequencyDefaults(Context context) {
-	   setFrequencyRange(context, 19000, 250);
+	   setFrequencyRange(context, 16000, 500);
    }
    
    public static void setFrequencyRange(Context context, int start, int interval) {

@@ -102,7 +102,11 @@ public class SineGenerator {
 		   
 		   private short[] createFartBuffer(int angle, short[] buffer) {
 			   for (int i = 0; i < buffer.length; i++) {
-				   buffer[i] = (short)(Short.MAX_VALUE * (scale * Math.sin(angle * digiFart)));
+				   if (i < buffer.length/2) {
+					   buffer[i] = (short)(Short.MAX_VALUE * (scale * Math.sin(angle * digiFart)));
+				   } else {
+					   buffer[i] = 0;
+				   }
 			   }
 			   return buffer;
 		   }
@@ -121,8 +125,8 @@ public class SineGenerator {
 		           // start playing the track
 		           track.play();
 		           // Send the fart buffer
-		           //if (!isCancelled())
-		           //	   track.write(fartBuf, 0, fartBuf.length);
+		           if (!isCancelled())
+		           	   track.write(fartBuf, 0, fartBuf.length);
 		           // Create a loop of buffer preparation and track playing
 		           while (!isCancelled() && cur < msg[0].getLength()) {
 		        	   // Index in current buffer
