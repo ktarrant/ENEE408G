@@ -147,7 +147,7 @@ public class TestFragment extends Fragment {
                 	int bufferSize 		= PreferenceHelper.getPulseSampleWidth(getActivity());
                 	int sampleFrequency = PreferenceHelper.getSampleRate(getActivity());
                 	double dbSens		= PreferenceHelper.getDbSensitivity(getActivity());
-                	recorder.startDetection(frequencies, bufferSize, sampleFrequency, 512, 0, dbSens);
+                	recorder.startDetection(frequencies, bufferSize, sampleFrequency, 512, 32, dbSens);
                 	startTime = ((float)System.currentTimeMillis())/1000.0f;
                 	clearSeries();
                 	curMsg = "";

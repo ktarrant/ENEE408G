@@ -141,9 +141,9 @@ public class AudioRecorder {
 			int cur = 0;
 			int inc = this.fftSize - this.overlap;
 			double[][] powerBuf = new double[count / inc][frequencies.length];
-			while (cur+inc <= count) {
+			while (cur+this.fftSize <= count) {
 				double[] tempBuf  = new double[frequencies.length];
-				for (int i = 0; i < inc; i++) {
+				for (int i = 0; i < this.fftSize; i++) {
 					// Applies the Hamming window
 					realBuf[i] = (double)this.micBuf[cur+i] / 128.0f * windBuf[i];
 					imagBuf[i] = 0.0f; // need to clear y or it breaks
@@ -151,7 +151,7 @@ public class AudioRecorder {
 				//Log.i(TAG, "Running fft...");
 				this.fft.fft(realBuf, imagBuf);
 				for (int i = 0; i < frequencies.length; i++) {
-					float index = (float)frequencies[i]/(float)sampleRate*this.fftSize;
+					float index = (float)frequencies[i]/(float)sampleRate*(float)this.fftSize;
 					int iFlr = (int)Math.floor(index);
 					tempBuf[i]  = (index-iFlr)/((float)powerBuf.length)*
 							10*Math.log10(realBuf[iFlr]*realBuf[iFlr] + imagBuf[iFlr]*imagBuf[iFlr]);
