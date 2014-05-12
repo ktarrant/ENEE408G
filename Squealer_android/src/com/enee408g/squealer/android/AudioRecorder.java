@@ -1,16 +1,5 @@
 package com.enee408g.squealer.android;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -19,349 +8,198 @@ import android.util.Log;
 
 public class AudioRecorder {
 
-	private int BytesPerElement = 2; // 2 bytes in 16bit format
-	private int bufferSize;
-	private int[] frequencies;
-	private int fartFrequency;
-	private int sampleRate;
-	private int pulseSampleWidth; 
-	private int fartSampleWidth;
-	private int pulsesPerBuffer;
-    private int trackBufferSize;
-	private float scale = 1.0f;
-	private float dbSens;
-	private float[] digiFreq = null;
-	private float digiFart;
-	private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
-	private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-	private AudioRecord recorder = null;
-	private FFT fft;
-	private int quickLen = 512;
-	private FFT miniFFT = new FFT(quickLen);
-	private BufferListener bufListener = null;
-	private ValueListener valueListener = null;
-	private FartListener fartListener = null;
-	private StartTask srtTask = null;
-	private ListenTask recTask = null;
 	private static final String TAG = "AudioRecorder";
 	
-	public interface BufferListener {
-		public void onBufferUpdate(short[] buf);
+	// PowerListener - updates the caller on the power of given frequencies
+	private PowerListener mPowerListener = null;
+	public interface PowerListener {
+		public void onBufferUpdate(double[] power);
 	}
-	public void setBufferListener(BufferListener listener) {
-		this.bufListener = listener;
+	public void setPowerListener(PowerListener powerListener) {
+		this.mPowerListener = powerListener;
 	}
 	
+	// ValueListener - updates the caller on the guessed value of the window
+	private ValueListener mValueListener = null;
 	public interface ValueListener {
-		public void onValueUpdate(byte[] msg);
+		public void onValueUpdate(byte value);
 	}
-	public void setValueListener(ValueListener listener) {
-		this.valueListener = listener;
-	}
-	
-	public interface FartListener {
-		public void onFartUpdate();
-	}
-	public void setFartListener(FartListener listener) {
-		this.fartListener = listener;
+	public void setValueListener(ValueListener valueListener) {
+		this.mValueListener = valueListener;
 	}
 	
-	public void updatePrefs(Context context) {
-		sampleRate 			= PreferenceHelper.getSampleRate(context);
-		pulseSampleWidth 	= PreferenceHelper.getPulseSampleWidth(context);
-		fartSampleWidth 	= PreferenceHelper.getFartSampleWidth(context);
-		pulsesPerBuffer 	= PreferenceHelper.getPulsesPerBuffer(context);
-	    trackBufferSize 	= PreferenceHelper.getTrackBufferSize(context);
-		dbSens				= PreferenceHelper.getDbSensitivity(context);
-	    bufferSize = pulseSampleWidth*pulsesPerBuffer;
-	}
-	
-	   public void setFartFrequency(int fartFreq) {
-		   this.fartFrequency = fartFreq;
-		   this.digiFart = (float)(2.0f * Math.PI * fartFreq) / (float)sampleRate;
-	   }
-	   
-	   public void setFrequencies(int[] j) {
-		   // Sets the transmission frequencies and sets them up for processing
-		   this.frequencies = j;
-		   scale = 1.0f / (float)j.length;
-		   digiFreq = new float[j.length];
-		   float twopie = (float) (2.0f * Math.PI);
-		   
-		   for (int i = 0; i < j.length; i++) {
-			   digiFreq[i] = twopie * j[i] / (float)sampleRate;
-		   }
-	   }
-	
-	public AudioRecorder(Context context) {
-		updatePrefs(context);
-		fft = new FFT(bufferSize);
-		setFrequencies(PreferenceHelper.getAllBitFrequencies(context));
-		setFartFrequency(PreferenceHelper.getFartFrequency(context));
-	}
-	
-	public void startRecording() {
-		if (recTask == null) {
-			recTask = new ListenTask();
-			recTask.execute();
-		}
-	}
-	
-	public void stopRecording() {
-		if (recTask != null) {
-			recTask.cancel(true);
-			recTask = null;
-		}
-	}
-	
-	public boolean isRecording() {
-		return recTask != null;
-	}
-	
-	Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
-			0x00}; // This last one is to accomodate the final bit - although it is not ready yet
-	
-	public List<double[]> getBands(double[] fft_result, double sens) {
-		double minVal = 0.0;
-		double maxVal = 100000.0;
-		double binWidth = sampleRate / (double)fft_result.length;
-		boolean inBand = false;
-		double minFreq = maxVal;
-		double maxFreq = minVal;
-		List<double[]> bands = new ArrayList<double[]>();
-		  for (int i = 0; i < fft_result.length/2; i++) {
-			double freq = (double)i * binWidth;
-			if (freq < sampleRate/2) {//(freq > minFrequency && freq < (sampleRate - minFrequency)) {
-				if (fft_result[i] > sens) {
-					if (freq < minFreq) minFreq = freq;
-					if (freq > maxFreq) maxFreq = freq;
-					if (!inBand) inBand = true;
-				} else {
-					if (inBand) {
-						inBand = false;
-						bands.add(new double[] {minFreq, maxFreq});
-						minFreq = maxVal;
-						maxFreq = minVal;
-					}
-				}
-		  	}
+	// Extract Byte - computes the value of a sample from the power levels
+	private static final Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
+		0x00}; // This last one is to accomodate the final bit - although it is not ready yet
+	private static byte extractByte(double[] power, double dbSensitivity) {
+	  byte rval = 0;
+	  for (int i = 0; i < power.length; i++) {
+		  if (power[i] > dbSensitivity) {
+			  rval |= MASK[i];
 		  }
-		 return bands;
-	}
-	
-	  public byte getValue(List<double[]> bands) {
-		 byte rval = 0;
-		 for (double[] band : bands) {
-			 for (int i = 0; i < frequencies.length; i++) {
-				 if (frequencies[i] > band[0] && frequencies[i] < band[1]) {
-					 rval |= MASK[i];
-				 }
-			 }
-		 }
-		 return rval;
-		  //return (double[][])bands.toArray(new double[bands.size()][2]);
 	  }
-	  
-	public boolean getFart(List<double[]> bands) {
-		for (double[] band : bands) {
-			Log.i(TAG, String.format("%f < %f < %f", band[0], (float)fartFrequency, band[1]));
-			if (fartFrequency > band[0] && fartFrequency < band[1]) {
-				return true;
-			}
-		}
-		return false;
+	  return rval;
 	}
 	
-	double[] miniInBuf = new double[quickLen];
-	double[] miniOutBuf = new double[quickLen];//
-	//
-	
-	public boolean[] quickFartCheck(short[] buf) {
-		boolean[] rval = new boolean[buf.length / quickLen];
-		int minVal = (int)(((float)(fartFrequency-250)/(float)sampleRate)*(float)quickLen);
-	    int maxVal = (int)(((float)(fartFrequency+250)/(float)sampleRate)*(float)quickLen);
-		double binWidth = sampleRate/quickLen;
-		for (int i = 0; i < rval.length; i++) { // i = chunk #
-			rval[i] = false;
-			for (int j = 0; j < quickLen; j++) { // index in chunk
-				miniInBuf[j] = (double)buf[j+i*quickLen] / 128.0f;
-				miniOutBuf[j] = 0;
-			}
-			miniFFT.fft(miniInBuf, miniOutBuf);
-			for (int j = 0; j < quickLen; j++) {
-				miniInBuf[j] = 10*Math.log10(miniInBuf[j]*miniInBuf[j]+miniOutBuf[j]*miniOutBuf[j]);
-			}
-//			rval[i] = getFart(getBands(miniInBuf, dbSens/2));
-			//String msg = String.valueOf(minVal) + " < [";
-			for (int j = minVal; j < maxVal; j++) {
-				//msg += String.valueOf(miniInBuf[j]) + ", ";
-				if (miniInBuf[j] > dbSens/2) {
-					rval[i] = true;
-					break;
-				}
-			}
-		    //msg += "] < " + String.valueOf(maxVal);
-		   /// Log.i(TAG, msg);
-			//Log.i(TAG, String.valueOf(i) + ": " + String.valueOf(rval[i]));
-		}
-		return rval;
+	// DetectTask which tracks the given frequencies' power
+	private DetectTask mDetectTask = null;
+	public void startDetection(int[] frequencies, int bufferSize, int sampleRate, 
+			int fftSize, int overlap, double dbSensitivity) {
+		stopDetection();
+		this.mDetectTask = new DetectTask(bufferSize, sampleRate, fftSize, overlap, dbSensitivity);
+		this.mDetectTask.execute(frequencies);
 	}
-
-	public void processBuffer(short[] buf) {
-		new runFFT().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, buf);
-	}
-	
-	//public void checkForFart(short[] buf) {
-	//	new runFFT(true).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, buf);
-	//}
-	
-	class runFFT extends AsyncTask<short[], Void, List<Byte>> {
-		
-		private double[] inBuf;
-		private double[] outBuf;
-		
-		public runFFT() {
-			this.inBuf = new double[bufferSize];
-			this.outBuf = new double[bufferSize];
-		}
-		
-		@Override
-		protected List<Byte> doInBackground(short[]... data) {
-			List<Byte> msg = new ArrayList<Byte>();
-			for (short[] d : data) {
-				if (d != null) {
-					//System.out.println("Processing data: " + d.toString());
-					// Change to double
-					for (int j = 0; j < d.length; j++) {
-						inBuf[j] = (double)d[j] / 128.0f;
-						outBuf[j] = 0.0f;
-					}
-					//long t1 = System.nanoTime();
-					fft.fft(inBuf, outBuf);
-					//System.out.println(String.format("FFT Time: %f", (float)(System.nanoTime()-t1)/1000000000.0f));
-					// Change to magnitude
-					double[] fft_result = new double[d.length];
-					for (int j = 0; j < d.length; j++) {
-						fft_result[j] = 10*Math.log10(inBuf[j]*inBuf[j]+outBuf[j]*outBuf[j]);
-					}
-					List<double[]> bands = getBands(fft_result, dbSens);
-					//boolean fartFound = getFart(bands);
-					byte val = getValue(bands);
-					if (val != 0) msg.add(val);
-				}
-			}
-			return msg;
-		}
-		
-		@Override
-		protected void onPostExecute(List<Byte> msg) {
-			if (valueListener != null) {
-				// Convert to native byte
-				byte[] rval = new byte[msg.size()];
-				for (int i = 0; i < rval.length; i++) {
-					rval[i] = msg.get(i);
-				}
-				valueListener.onValueUpdate(rval);
-			}
+	public void stopDetection() {
+		if (this.mDetectTask != null) {
+			this.mDetectTask.cancel(true);
+			this.mDetectTask = null;
 		}
 	}
+	public boolean isDetecting() {
+		return (this.mDetectTask != null);
+	}
 	
-	
-	
-	class StartTask extends AsyncTask<Void, Boolean, Void> {
-		
-		short[] sData;
-		double[] inBuf;
-		double[] outBuf;
-		
-		@Override
-		protected void onPreExecute() {
+	// DetectTask - monitors the microphone for given frequencies.
+	class DetectTask extends AsyncTask<int[], double[], Void> {
+		// Constants
+		private static final int RECORDER_CHANNELS 			= AudioFormat.CHANNEL_IN_MONO;
+		private static final int RECORDER_AUDIO_ENCODING 	= AudioFormat.ENCODING_PCM_16BIT;
+		private static final int BYTES_PER_ELEMENT 			= 2; // 2 bytes in 16bit format
+		// Parameters of the recording task
+		private int bufferSize;
+		private int sampleRate;
+		private int fftSize;
+		private int overlap;
+		private double dbSensitivity;
+		// Buffers
+		private short[]  micBuf;
+		private double[] realBuf;
+		private double[] imagBuf;
+		private double[] windBuf;
+		// Objects
+		private AudioRecord recorder;
+		private FFT fft;
+		// Round up to next higher power of 2 (return x if it's already a power of 2).
+		int pow2roundup (int x) {
+		    if (x < 0) return 0;
+		    --x;
+		    x |= x >> 1;
+		    x |= x >> 2;
+		    x |= x >> 4;
+		    x |= x >> 8;
+		    x |= x >> 16;
+		    return x+1;
+		}
+		private double[] genWindow(int bufferSize) {
+			// Creates a hamming window
+			double[] rval = new double[bufferSize];
+			for (int i = 0; i < bufferSize; i++) {
+				rval[i] = 0.54 - 0.46*Math.cos(2.0f*Math.PI*((double)i)/((double)bufferSize));
+			}
+			return rval;
+		}
+		// Save and generate important parameters at creation
+		public DetectTask(int bufferSize, int sampleRate, int fftSize, int overlap, double dbSensitivity) {
+			this.bufferSize = bufferSize;
+			this.sampleRate = sampleRate;
+			this.fftSize = pow2roundup(fftSize);
+			this.fft = new FFT(this.fftSize);
+			this.windBuf = genWindow(this.fftSize);
+			this.overlap = overlap;
+			this.dbSensitivity = dbSensitivity;
+		}
+		// When the task is started, we need to prepare for streaming
+		@Override protected void onPreExecute() {
+			// Initialize buffers//
+		    this.micBuf  = new short [this.bufferSize];
+		    this.realBuf = new double[this.fftSize];
+		    this.imagBuf = new double[this.fftSize];
+		    // Start the recording
 		    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-		            sampleRate, RECORDER_CHANNELS,
-		            RECORDER_AUDIO_ENCODING, bufferSize * BytesPerElement);
-
+		            this.sampleRate, RECORDER_CHANNELS,
+		            RECORDER_AUDIO_ENCODING, this.bufferSize * BYTES_PER_ELEMENT);
 		    recorder.startRecording();
-		    srtTask = this;
-		    sData = new short[quickLen];
-		    inBuf = new double[quickLen];
-		    outBuf = new double[quickLen];
 		}
-		
-		@Override
-		protected Void doInBackground(Void... params) {
+		// Finds the mode of an input list
+		private byte getMode(byte[] list) {
+			byte mode = 0;
+			int modeFreq = 0;
+			for (int i = 0; i < list.length; i++) {
+				int curFreq = 1;
+				for (int j = i+1; j < list.length; j++) {
+					if (list[i] == list[j]) curFreq++;
+				}
+				if (curFreq > modeFreq) {
+					mode = list[i];
+					modeFreq = curFreq;
+				}
+			}
+			return mode;
+		}
+		// Performs a STFT on a given window and publishes the results
+		private void runSTFT(short[] buf, int count, int[] frequencies) {
+			int cur = 0;
+			int inc = this.fftSize - this.overlap;
+			double[][] powerBuf = new double[count / inc][frequencies.length];
+			while (cur+inc <= count) {
+				double[] tempBuf  = new double[frequencies.length];
+				for (int i = 0; i < inc; i++) {
+					// Applies the Hamming window
+					realBuf[i] = (double)this.micBuf[cur+i] / 128.0f * windBuf[i];
+					imagBuf[i] = 0.0f; // need to clear y or it breaks
+				}
+				//Log.i(TAG, "Running fft...");
+				this.fft.fft(realBuf, imagBuf);
+				for (int i = 0; i < frequencies.length; i++) {
+					float index = (float)frequencies[i]/(float)sampleRate*this.fftSize;
+					int iFlr = (int)Math.floor(index);
+					tempBuf[i]  = (index-iFlr)/((float)powerBuf.length)*
+							10*Math.log10(realBuf[iFlr]*realBuf[iFlr] + imagBuf[iFlr]*imagBuf[iFlr]);
+					tempBuf[i] += (iFlr+1.0f-index)/((float)powerBuf.length)*
+							10*Math.log10(realBuf[iFlr+1]*realBuf[iFlr+1]+ imagBuf[iFlr+1]*imagBuf[iFlr+1]);
+				}
+				powerBuf[cur / inc] = tempBuf;
+				cur += inc;
+			}
+			publishProgress(powerBuf);
+		}
+		// The streaming function
+		@Override protected Void doInBackground(int[]... frequencies) {
 			while (!isCancelled()) {
-				int readCount = recorder.read(sData, 0, bufferSize);
-				for (int i = 0; i < quickLen; i++) {
-					inBuf[i] = (double)sData[i] / 128.0f;
-					outBuf[i] = 0.0f;
-					//long t1 = System.nanoTime();
-				}
-				fft.fft(inBuf, outBuf);
-				for (int i = 0; i < quickLen; i++) {
-					inBuf[i] = 10*Math.log10(inBuf[i]*inBuf[i]+outBuf[i]*outBuf[i]);
-				}
+				int readCount = recorder.read(this.micBuf, 0, this.bufferSize);
+				runSTFT(this.micBuf, readCount, frequencies[0]);
 			}
 			return null;
 		}
-		
-		@Override
-		protected void onCancelled() {
-			destroy();
-		}
-	}
-	
-	class ListenTask extends AsyncTask<Void, short[], Void> {
-		short[] sData;
-		boolean msgStarted = false;
-		boolean aligning = false;
-		
-		@Override
-		protected void onPreExecute() {
-		    recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-		            sampleRate, RECORDER_CHANNELS,
-		            RECORDER_AUDIO_ENCODING, bufferSize * BytesPerElement);
-
-		    recorder.startRecording();
-		    recTask = this;
-		    sData = new short[bufferSize];
-		}
-		
-		@Override protected void onProgressUpdate(short[]... msg) {
-			for (short[] m : msg) {
-				if (bufListener != null) bufListener.onBufferUpdate(m);
+		// Receives updates containing the power of desired frequencies
+		@Override protected void onProgressUpdate(double[]... power) {	
+			if (power.length == 0) return;
+			double[] pavg = new double[power[0].length];
+			byte[] valBuf = new byte[power.length];
+			for (int i = 0; i < power.length; i++) {
+				if (mPowerListener != null) mPowerListener.onBufferUpdate(power[i]);
+				valBuf[i] = extractByte(power[i], this.dbSensitivity);
+			}
+			if (mValueListener != null) {
+				byte val = getMode(valBuf);
+				//Log.i(TAG, String.format("%X", val));
+				mValueListener.onValueUpdate(val);
 			}
 		}
-
-		@Override
-		protected Void doInBackground(Void... params) {
-			while (!isCancelled()) {
-				int readCount = recorder.read(sData, 0, quickLen);
-				//System.out.println(String.format("Recording time: %f sec", (float)readCount / (float)sampleRate));
-				publishProgress(sData);
-			}
-			Log.i(TAG, "Cancelled!");
-			return null;
-		}
-		
-		@Override
-		protected void onCancelled() {
+		@Override protected void onCancelled() {
 			destroy();
 		}
-		
-		@Override
-		protected void onPostExecute(Void v) {
+		@Override protected void onPostExecute(Void vd) {
 			destroy();
 		}
-	
-	}
-	
-	void destroy() {
-	    // stops the recording activity
-	    if (null != recorder) {
-	        recTask = null;
-	        recorder.stop();
-	        recorder.release();
-	        recorder = null;
-	    }
+		// destroy recorder instance
+		void destroy() {
+		    // stops the recording activity
+		    if (null != recorder) {
+		        recorder.stop();
+		        recorder.release();
+		        recorder = null;
+		    }
+		}
 	}
 }

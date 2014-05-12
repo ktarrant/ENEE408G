@@ -14,8 +14,7 @@ import org.achartengine.model.XYSeries;
 import org.achartengine.renderer.XYMultipleSeriesRenderer;
 import org.achartengine.renderer.XYSeriesRenderer;
 
-import com.enee408g.squealer.android.AudioRecorder.BufferListener;
-import com.enee408g.squealer.android.AudioRecorder.FartListener;
+import com.enee408g.squealer.android.AudioRecorder.PowerListener;
 import com.enee408g.squealer.android.AudioRecorder.ValueListener;
 
 import android.support.v4.app.Fragment;
@@ -42,9 +41,9 @@ import android.media.MediaRecorder;
 public class TestFragment extends Fragment {
 	
 	private final static String TAG = "TestFragment";
-	private boolean isRecording = false;
-	private boolean startedMessage = false;
+	private String curMsg = "";
 	private AudioRecorder recorder = null;
+	private float startTime = 0.0f;
 	
 	  /** The main dataset that includes all the series that go into a chart. */
 	  private XYMultipleSeriesDataset mDataset = new XYMultipleSeriesDataset();
@@ -53,12 +52,18 @@ public class TestFragment extends Fragment {
 	  /** The chart view that displays the data. */
 	  private GraphicalView mChartView;
 	  
+	@Override
+	public void onPause() {
+		super.onPause();
+		if (recorder != null) recorder.stopDetection();
+	}
+	  
 	  @Override
 	  public void onCreate(Bundle savedInstanceState) {
 		  	super.onCreate(savedInstanceState);
 		    // set some properties on the main renderer
-		    //mRenderer.setApplyBackgroundColor(true);
-		    //mRenderer.setBackgroundColor(Color.argb(100, 50, 50, 50));
+		    mRenderer.setApplyBackgroundColor(true);
+		    mRenderer.setBackgroundColor(Color.argb(100, 50, 50, 50));
 		    mRenderer.setAxisTitleTextSize(16);
 		    mRenderer.setChartTitleTextSize(20);
 		    mRenderer.setLabelsTextSize(15);
@@ -68,74 +73,39 @@ public class TestFragment extends Fragment {
 		    mRenderer.setPointSize(5);
 	  }
 	  
-	  public void addNewSeries(double[] setToPlot, double sampleFrequency, double minFrequency) {
-	        String seriesTitle = "Series " + (mDataset.getSeriesCount() + 1);
-	        // create a new series of data
-	        XYSeries series = new XYSeries(seriesTitle);
-	        if (mDataset.getSeriesCount() > 0) {
-	        	mDataset.removeSeries(0);
-	        }
-	        double binWidth = sampleFrequency / (double)setToPlot.length;
-	        mDataset.addSeries(series);
-	        for (int x = 0; x < setToPlot.length/2; x++) {
-	        	if (binWidth * x > minFrequency) { // only check desired frequencies
-	        		series.add(binWidth*x, setToPlot[x]);
-	        	}
-	        }
-	        //mCurrentSeries = series;
-	        // create a new renderer for the new series
-	        XYSeriesRenderer renderer = new XYSeriesRenderer();
-	        mRenderer.addSeriesRenderer(renderer);
-	        // set some renderer properties
-	        //renderer.setPointStyle(PointStyle.CIRCLE);
-	        //renderer.setFillPoints(true);
-	        //renderer.setDisplayChartValues(true);
-	        //renderer.setDisplayChartValuesDistance(10);
-	        //mCurrentRenderer = renderer;
-	        //setSeriesWidgetsEnabled(true);
-	        mChartView.repaint();
+	  public void createSeriesList(String[] labels) {
+		  XYMultipleSeriesDataset rval = new XYMultipleSeriesDataset();
+		  for (int i = 0; i < labels.length; i++) {
+			  String label = labels[i];
+			  XYSeries series = new XYSeries(label);
+			  rval.addSeries(series);
+			  int r = 0;
+			  int g = 0;
+			  int b = 0;
+			  if (i % 2 == 0) r = 255;
+			  if (i % 4 == 0) g = 255;
+			  if (i % 8 == 0) b = 255;
+			  XYSeriesRenderer renderer = new XYSeriesRenderer();
+			  renderer.setColor(Color.rgb(r, g, b));
+			  this.mRenderer.addSeriesRenderer(renderer);
+		  }
+		  this.mDataset = rval;  
 	  }
 	  
-		Byte[] MASK = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, (byte)0x80, 
-				0x00}; // This last one is to accomodate the final bit - although it is not ready yet
-	  
-	  public byte getValue(double[] fft_result, double minFrequency, double sampleFrequency) {
-		double binWidth = sampleFrequency / (double)fft_result.length;
-		float dbsense = PreferenceHelper.getDbSensitivity(getActivity());
-		boolean inBand = false;
-		double minVal = 0.0;
-		double maxVal = 100000.0;
-		double minFreq = maxVal;
-		double maxFreq = minVal;
-		ArrayList<double[]> bands = new ArrayList<double[]>();
-		  for (int i = 0; i < fft_result.length/2; i++) {
-			double freq = (double)i * binWidth;
-			if (freq > minFrequency && freq < (sampleFrequency - minFrequency)) {
-				if (fft_result[i] > dbsense) {
-					if (freq < minFreq) minFreq = freq;
-					if (freq > maxFreq) maxFreq = freq;
-					if (!inBand) inBand = true;
-				} else {
-					if (inBand) {
-						inBand = false;
-						bands.add(new double[] {minFreq, maxFreq});
-						minFreq = maxVal;
-						maxFreq = minVal;
-					}
-				}
-		  	}
+	  public void addPoint(double[] pts, int maxPoints) {
+		  float now = ((float)System.currentTimeMillis()/1000.0f) - startTime;
+		  for (int i = 0; i < this.mDataset.getSeriesCount(); i++) {
+			  XYSeries series = this.mDataset.getSeriesAt(i);
+			  series.add(now, pts[i]);
+			  if (series.getItemCount() > maxPoints) series.remove(0);
 		  }
-		 byte rval = 0;
-		 for (double[] band : bands) {
-			 int[] freqs = PreferenceHelper.getAllBitFrequencies(getActivity());
-			 for (int i = 0; i < freqs.length; i++) {
-				 if (freqs[i] > band[0] && freqs[i] < band[1]) {
-					 rval |= MASK[i];
-				 }
-			 }
-		 }
-		 return rval;
-		  //return (double[][])bands.toArray(new double[bands.size()][2]);
+		  mChartView.repaint();
+	  }
+	  
+	  public void clearSeries() {
+		  for (int i = 0; i < this.mDataset.getSeriesCount(); i++) {
+			  this.mDataset.getSeriesAt(i).clear();
+		  }
 	  }
 	  
 	  @Override
@@ -147,66 +117,51 @@ public class TestFragment extends Fragment {
 	      final Button startButton = (Button) rootView.findViewById(R.id.test_button_record);
 	      final EditText numberDisplay = (EditText) rootView.findViewById(R.id.test_numberDisplay);
 
-	      recorder = new AudioRecorder(getActivity());
-	      recorder.setBufferListener(new BufferListener() {
+	      recorder = new AudioRecorder();
+	      recorder.setPowerListener(new PowerListener() {
 			@Override
-			public void onBufferUpdate(short[] msg) {
-				//Log.i(TAG, String.format("Buffer received: %d", msg.length));
-				//if (startedMessage) {
-					recorder.processBuffer(msg);
-				//} else {
-				//	recorder.checkForFart(msg);
-				//}
-//				double binWidth = sampleFrequency / (double)fft_result.length;
-//				startButton.setText("Start Test");
-//				startButton.setEnabled(true);
-//				byte msg = getValue(fft_result, minFrequency, sampleFrequency);
-//				String outMsg = String.format("%16s", Integer.toBinaryString(msg)).replace(' ', '0');
-//				numberDisplay.setText(outMsg);
-//				addNewSeries(fft_result, sampleFrequency, minFrequency);
+			public void onBufferUpdate(double[] power) {
+				addPoint(power, 256);
 			}
 	      });
 	      recorder.setValueListener(new ValueListener() {
 			@Override
-			public void onValueUpdate(byte[] msg) {
-//				Log.i(TAG, String.format("FFT received: %d", msg.length));
-				String outMsg = "";
-				for (byte m : msg)
-					outMsg += String.format("%8s", Integer.toBinaryString(m)).replace(' ', '0');
-				numberDisplay.setText(outMsg);
+			public void onValueUpdate(byte value) {
+				if (value != 0) {
+					curMsg += new String(new byte[] {value});
+					numberDisplay.setText(curMsg);
+				}
 			}
 	      });
-//	      recorder.setFartListener(new FartListener() {
-//			@Override
-//			public void onFartUpdate() {
-//				if (startedMessage) {
-//					recorder.stopRecording();
-//					numberDisplay.setText(getString(R.string.receiver_start_label) + " (Success)");
-//				} else {
-//					numberDisplay.setText("Recording!");
-//					startedMessage = true;
-//				}
-//			}
-//	      });
 	      startButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View arg0) {
-                if (recorder.isRecording()) {
+                if (recorder.isDetecting()) {
                     startButton.setText(getString(R.string.receiver_start_label));
-                    recorder.stopRecording();
+                    recorder.stopDetection();
                     //numberDisplay.setText("Aborted.");
                 } else {
                 	startButton.setText(getString(R.string.receiver_abort_label));
                 	//numberDisplay.setText("Waiting for fart...");
-                	//startedMessage = false;
-                	recorder.startRecording();
+                	int[] frequencies	= PreferenceHelper.getAllBitFrequencies(getActivity());
+                	int bufferSize 		= PreferenceHelper.getPulseSampleWidth(getActivity());
+                	int sampleFrequency = PreferenceHelper.getSampleRate(getActivity());
+                	double dbSens		= PreferenceHelper.getDbSensitivity(getActivity());
+                	recorder.startDetection(frequencies, bufferSize, sampleFrequency, 512, 0, dbSens);
+                	startTime = ((float)System.currentTimeMillis())/1000.0f;
+                	clearSeries();
+                	curMsg = "";
                 }
 			}
 	    	  
 	      });
-	      
+	      int[] frequencies	= PreferenceHelper.getAllBitFrequencies(getActivity());
 	      // Create chart
-	      
+	      String[] labels = new String[frequencies.length];
+	      for (int i = 0; i < labels.length; i++) {
+	      	labels[i] = String.format("%d Hz", frequencies[i]);
+	      }
+	      createSeriesList(labels);
 	      LinearLayout layout = (LinearLayout) rootView.findViewById(R.id.chart);
 	      mChartView = ChartFactory.getLineChartView(getActivity(), mDataset, mRenderer);
 	      // enable the chart click events
@@ -230,7 +185,6 @@ public class TestFragment extends Fragment {
 	      });
 	      layout.addView(mChartView, new LayoutParams(LayoutParams.FILL_PARENT,
 	          LayoutParams.FILL_PARENT));
-	      
 	      return rootView;
 	      
 	  }

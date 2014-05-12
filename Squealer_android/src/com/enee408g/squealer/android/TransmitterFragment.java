@@ -36,16 +36,6 @@ public class TransmitterFragment extends Fragment {
 	      goButton = (Button) rootView.findViewById(R.id.transmitter_button);
 	      textView = (EditText) rootView.findViewById(R.id.transmitter_message);
 	      
-	      PreferenceManager.getDefaultSharedPreferences(getActivity())
-	      	.registerOnSharedPreferenceChangeListener(new OnSharedPreferenceChangeListener() {
-
-				@Override
-				public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-					gen.setFartFrequency(PreferenceHelper.getFartFrequency(getActivity()));
-					gen.setFrequencies(PreferenceHelper.getAllBitFrequencies(getActivity()));
-				}
-	      	});
-	      
 	      gen = new SineGenerator(getActivity(), PreferenceHelper.getFartFrequency(getActivity()),
 	    		  PreferenceHelper.getAllBitFrequencies(getActivity()));
 	      gen.setPlaybackFinishedListener(new PlaybackFinishedListener() {

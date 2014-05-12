@@ -1,9 +1,5 @@
 package com.enee408g.squealer.android;
 
-
-import com.enee408g.squealer.android.AudioRecorder.BufferListener;
-import com.enee408g.squealer.android.AudioRecorder.ValueListener;
-
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -24,7 +20,7 @@ public class ReceiverFragment extends Fragment {
 	@Override
 	public void onPause() {
 		super.onPause();
-		if (recorder != null) recorder.stopRecording();
+		if (recorder != null) recorder.stopDetection();
 	}
 	
 	  
@@ -36,7 +32,7 @@ public class ReceiverFragment extends Fragment {
 	      
 	      final Button startButton = (Button) rootView.findViewById(R.id.receiver_button_record);
 	      final EditText numberDisplay = (EditText) rootView.findViewById(R.id.receiver_message);
-	      
+	      /*
 	      recorder = new AudioRecorder(getActivity());
 	      recorder.setBufferListener(new BufferListener() {
 			@Override
@@ -64,7 +60,7 @@ public class ReceiverFragment extends Fragment {
                 }
 			}
 	    	  
-	      });
+	      });*/
 	      return rootView;
 	      
 	  }
