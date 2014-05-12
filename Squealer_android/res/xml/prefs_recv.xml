@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"> 
+    <Preference 
+        android:key="@string/default_pref"
+        android:title="Set To Defaults"/>
+    <EditTextPreference
+        android:key="recv_sampleRate"
+        android:defaultValue="44100"
+        android:title="Sample Rate"
+        android:inputType="number" /> 
+    <EditTextPreference
+        android:key="recv_threshold"
+        android:defaultValue="1.7"
+        android:title="Threshold (dB)"
+        android:inputType="numberDecimal" />
+    <EditTextPreference
+        android:key="recv_bufferSize"
+        android:defaultValue="4096"
+        android:title="Pulse Sample Width"
+        android:inputType="number"
+        android:tag="samples" />
+    <EditTextPreference
+        android:key="recv_fftSize"
+        android:defaultValue="512"
+        android:title="FFT Size"
+        android:inputType="number"/>
+    <EditTextPreference
+        android:key="recv_fftOverlap"
+        android:defaultValue="32"
+        android:title="FFT Overlap"
+        android:inputType="number" />
+</PreferenceScreen>

@@ -6,41 +6,60 @@ import android.preference.PreferenceManager;
 
 public class PreferenceHelper {
 	
+	// Receiver Settings
+   public static int getReceiverSampleRate(Context context) {
+	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	   return Integer.parseInt(prefs.getString("recv_sampleRate", "44100"));
+   }
+	
    public static float getDbSensitivity(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Float.parseFloat(prefs.getString("db_sens", "40.0"));
+	   return Float.parseFloat(prefs.getString("recv_threshold", "40.0"));
    }
    
-   public static float getDutyCycle(Context context) {
+   public static int getReceiverBufferSize(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Float.parseFloat(prefs.getString("dutyCucle", "0.75"));
+	   return Integer.parseInt(prefs.getString("recv_bufferSize", "4096"));
    }
    
-   public static int getSampleRate(Context context) {
+   public static int getFFTSize(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Integer.parseInt(prefs.getString("sampleRate", "44100"));
+	   return Integer.parseInt(prefs.getString("recv_fftSize", "512"));
    }
    
-   public static int getPulseSampleWidth(Context context) {
+   public static int getFFTOverlap(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Integer.parseInt(prefs.getString("pulseSampleWidth", "2048"));
+	   return Integer.parseInt(prefs.getString("recv_fftOverlap", "32"));
    }
-   
-   public static int getFartSampleWidth(Context context) {
+
+   // Transmitter Settings
+
+   public static int getTransmitterSampleRate(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Integer.parseInt(prefs.getString("fartSampleWidth", "8096"));
-   }
-   
-   public static int getPulsesPerBuffer(Context context) {
-	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Integer.parseInt(prefs.getString("pulsesPerBuffer", "2"));
+	   return Integer.parseInt(prefs.getString("trans_sampleRate", "44100"));
    }
    
    public static int getTrackBufferSize(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Integer.parseInt(prefs.getString("trackBufferSize", "2048"));
+	   return Integer.parseInt(prefs.getString("trans_trackBufferSize", "2048"));
+   }
+   
+   public static int getPulseSampleWidth(Context context) {
+	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	   return Integer.parseInt(prefs.getString("trans_pulseSampleWidth", "4096"));
+   }
+   
+   public static int getFartSampleWidth(Context context) {
+	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	   return Integer.parseInt(prefs.getString("trans_fartSampleWidth", "4096"));
+   }
+   
+   public static float getDutyCycle(Context context) {
+	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+	   return Float.parseFloat(prefs.getString("trans_dutyCucle", "0.5"));
    }
 	
+   //  Frequency Settings
    public static int getBitFrequency(Context context, int position) {
 	   String pref_key = String.format("freq_b%d", position);
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);

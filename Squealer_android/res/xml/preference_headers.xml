@@ -12,4 +12,9 @@
         android:title="Transmission Preferences"
         android:summary="Customize the parameters used to transmit your data." />
     
+    <header
+        android:fragment="com.enee408g.squealer.android.SettingsActivity$RecvPrefsFragment"
+        android:title="Receiving Preferences"
+        android:summary="Customize the parameters used to receive your data." />
+    
 </preference-headers>

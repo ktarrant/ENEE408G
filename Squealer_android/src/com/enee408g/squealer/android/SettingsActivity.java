@@ -221,4 +221,61 @@ public class SettingsActivity extends PreferenceActivity {
         	prefs.unregisterOnSharedPreferenceChangeListener(prefListener);
         }
 	}
+	
+public static class RecvPrefsFragment extends PreferenceFragment {
+		
+		SharedPreferences prefs = null;
+		
+		public OnSharedPreferenceChangeListener prefListener = new OnSharedPreferenceChangeListener() {
+			@Override
+			public void onSharedPreferenceChanged(
+					SharedPreferences prefs, String key) {
+				updatePreference(prefs, key);
+			}
+		};
+		
+		public void updatePreference(SharedPreferences prefs, String key) {
+		    Preference pref = findPreference(key);
+
+		    if (pref instanceof EditTextPreference) {
+		        EditTextPreference listPref = (EditTextPreference) pref;
+		        pref.setSummary(prefs.getString(key, "0" ));
+		    }
+		}
+		
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            
+            // Load the preferences from an XML resource
+            addPreferencesFromResource(R.xml.prefs_recv);
+    		
+    		Preference defPref = findPreference(getString(R.string.default_pref));
+    		defPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					//TODO: Defaults
+					return false;
+				}
+    		});
+        }
+        
+        @Override
+        public void onResume() {
+        	super.onResume();
+        	
+        	prefs.registerOnSharedPreferenceChangeListener(prefListener);
+        	
+        	//for (int i = 0;i < this.getPreferenceScreen().getPreferenceCount(); );
+        	//}
+        }
+        
+        @Override
+        public void onPause() {
+        	super.onPause();
+        	
+        	prefs.unregisterOnSharedPreferenceChangeListener(prefListener);
+        }
+	}
 }

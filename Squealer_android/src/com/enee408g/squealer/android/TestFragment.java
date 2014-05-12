@@ -144,10 +144,12 @@ public class TestFragment extends Fragment {
                 	startButton.setText(getString(R.string.receiver_abort_label));
                 	//numberDisplay.setText("Waiting for fart...");
                 	int[] frequencies	= PreferenceHelper.getAllBitFrequencies(getActivity());
-                	int bufferSize 		= PreferenceHelper.getPulseSampleWidth(getActivity());
-                	int sampleFrequency = PreferenceHelper.getSampleRate(getActivity());
+                	int bufferSize 		= PreferenceHelper.getReceiverBufferSize(getActivity());
+                	int sampleFrequency = PreferenceHelper.getReceiverSampleRate(getActivity());
                 	double dbSens		= PreferenceHelper.getDbSensitivity(getActivity());
-                	recorder.startDetection(frequencies, bufferSize, sampleFrequency, 512, 32, dbSens);
+                	int fftSize 		= PreferenceHelper.getFFTSize(getActivity());
+                	int fftOverlap		= PreferenceHelper.getFFTOverlap(getActivity());
+                	recorder.startDetection(frequencies, bufferSize, sampleFrequency, fftSize, fftOverlap, dbSens);
                 	startTime = ((float)System.currentTimeMillis())/1000.0f;
                 	clearSeries();
                 	curMsg = "";
