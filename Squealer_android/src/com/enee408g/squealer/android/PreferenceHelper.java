@@ -56,7 +56,7 @@ public class PreferenceHelper {
    
    public static float getDutyCycle(Context context) {
 	   SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-	   return Float.parseFloat(prefs.getString("trans_dutyCucle", "0.5"));
+	   return Float.parseFloat(prefs.getString("trans_dutyCycle", "0.2"));
    }
 	
    //  Frequency Settings

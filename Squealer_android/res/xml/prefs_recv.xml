@@ -16,7 +16,7 @@
     <EditTextPreference
         android:key="recv_bufferSize"
         android:defaultValue="4096"
-        android:title="Pulse Sample Width"
+        android:title="Buffer Size"
         android:inputType="number"
         android:tag="samples" />
     <EditTextPreference

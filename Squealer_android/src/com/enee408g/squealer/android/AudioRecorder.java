@@ -151,6 +151,7 @@ public class AudioRecorder {
 				//Log.i(TAG, "Running fft...");
 				this.fft.fft(realBuf, imagBuf);
 				for (int i = 0; i < frequencies.length; i++) {
+					// Computes data using the power of two nearby points
 					float index = (float)frequencies[i]/(float)sampleRate*(float)this.fftSize;
 					int iFlr = (int)Math.floor(index);
 					tempBuf[i]  = (index-iFlr)/((float)powerBuf.length)*
@@ -166,7 +167,9 @@ public class AudioRecorder {
 		// The streaming function
 		@Override protected Void doInBackground(int[]... frequencies) {
 			while (!isCancelled()) {
+				// record a buffer fill
 				int readCount = recorder.read(this.micBuf, 0, this.bufferSize);
+				// analyze the new buffer
 				runSTFT(this.micBuf, readCount, frequencies[0]);
 			}
 			return null;
@@ -177,12 +180,13 @@ public class AudioRecorder {
 			double[] pavg = new double[power[0].length];
 			byte[] valBuf = new byte[power.length];
 			for (int i = 0; i < power.length; i++) {
+				// update the power listener on the new data
 				if (mPowerListener != null) mPowerListener.onBufferUpdate(power[i]);
+				// attempt to extract data from the frequencies
 				valBuf[i] = extractByte(power[i], this.dbSensitivity);
 			}
 			if (mValueListener != null) {
 				byte val = getMode(valBuf);
-				//Log.i(TAG, String.format("%X", val));
 				mValueListener.onValueUpdate(val);
 			}
 		}

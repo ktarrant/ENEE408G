@@ -61,6 +61,8 @@ public class SettingsActivity extends PreferenceActivity {
 	      return true;
 	  else if(TransPrefsFragment.class.getName().equals(fragmentName))
 	      return true;
+	  else if(RecvPrefsFragment.class.getName().equals(fragmentName))
+	      return true;
 	  return false;
 
 	}
@@ -141,7 +143,7 @@ public class SettingsActivity extends PreferenceActivity {
     		audPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 				@Override
 				public boolean onPreferenceClick(Preference preference) {
-					PreferenceHelper.setFrequencyRange(getActivity(), 10000, 500);
+					PreferenceHelper.setFrequencyRange(getActivity(), 5000, 500);
 					return false;
 				}
     		});

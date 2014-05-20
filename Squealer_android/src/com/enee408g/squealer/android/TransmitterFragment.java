@@ -36,7 +36,9 @@ public class TransmitterFragment extends Fragment {
 	      goButton = (Button) rootView.findViewById(R.id.transmitter_button);
 	      textView = (EditText) rootView.findViewById(R.id.transmitter_message);
 	      
-	      gen = new SineGenerator();
+	      gen = new SineGenerator(getActivity(),
+	    		  PreferenceHelper.getFartFrequency(getActivity()),
+	    		  PreferenceHelper.getAllBitFrequencies(getActivity()));
 	      gen.setPlaybackFinishedListener(new PlaybackFinishedListener() {
 			@Override
 			public void onPlaybackFinished(boolean cancelled) {
@@ -70,16 +72,7 @@ public class TransmitterFragment extends Fragment {
 			e.printStackTrace();
 			return;
 		}
-		Byte[] msg = new Byte[b.length];
-		for (int i = 0;i < b.length; i++) {
-			msg[i] = b[i];
-		}
-		int[] frequencies	= PreferenceHelper.getAllBitFrequencies(getActivity());
-    	int trackBufferSize = PreferenceHelper.getTrackBufferSize(getActivity());
-    	int sampleRate		= PreferenceHelper.getTransmitterSampleRate(getActivity());
-    	int pulseWidth 		= PreferenceHelper.getPulseSampleWidth(getActivity());
-    	double dutyCycle 	= PreferenceHelper.getDutyCycle(getActivity());
-	    gen.play(msg, sampleRate, trackBufferSize, frequencies, pulseWidth, dutyCycle);
+	    gen.play(b);
 		goButton.setText(getString(R.string.transmitter_abort_label));
 	  }
 	  
